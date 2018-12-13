@@ -1,16 +1,17 @@
 (ns rss-feed-reader.app
   (:import (com.rometools.rome.io SyndFeedInput XmlReader)
            (java.net URL))
-  (:use rss-feed-reader.migrations
-        ring.adapter.jetty)
+  (:use ring.adapter.jetty)
   (:require [rss-feed-reader.models.subscription :as subscription]
             [migratus.core :as migratus]
+            [rss-feed-reader.models.db :refer :all]
             [bidi.ring :refer (make-handler)]
             [ring.middleware.flash :refer [wrap-flash]]
             [rss-feed-reader.subscription]
             [ring.util.response :as res]
-            [ring.middleware.json :refer [wrap-json-response]]
-            [clojure.tools.logging :as log]))
+            [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
+            [clojure.tools.logging :as log]
+            [cheshire.core :refer :all]))
 
 (defn get-feed
   "get feed from subscription url"
@@ -46,9 +47,15 @@
 
 (def app
   (-> handler
+      wrap-json-body
       wrap-json-response))
 
 (defn -main
   []
-  (migratus/migrate config)
+  (migratus/migrate {:store                :database,
+                     :migration-dir        "migrations/",
+                     :init-in-transaction? false,
+                     :db                   db-config})
+
+  (log/info "booting server ... ")
   (run-jetty app {:port 3000}))
