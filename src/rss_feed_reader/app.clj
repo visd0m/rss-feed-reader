@@ -6,8 +6,6 @@
             [migratus.core :as migratus]
             [rss-feed-reader.models.db :refer :all]
             [bidi.ring :refer (make-handler)]
-            [ring.middleware.flash :refer [wrap-flash]]
-            [rss-feed-reader.subscription]
             [ring.util.response :as res]
             [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
             [clojure.tools.logging :as log]
@@ -29,14 +27,18 @@
 (defn get-subscription-handler
   [{:keys [route-params]}]
   (log/info route-params)
-  (res/response (subscription/by-id (:id route-params))))
+  (res/response
+    (subscription/by-id (:id route-params))))
 
 ; ==== post
 
 (defn post-subscription-handler [req]
-  (res/response (subscription/insert (:body req))))
-
-
+  (let [subscription (:body req)]
+    (log/info subscription)
+    (->
+      subscription
+      (subscription/insert)
+      (res/response))))
 
 (def routes ["/subscriptions"
              {""        {:get  (fn [req] (get-list-subscriptions-handler req))
@@ -47,8 +49,8 @@
 
 (def app
   (-> handler
-      wrap-json-body
-      wrap-json-response))
+      (wrap-json-body {:keywords? true :bigdecimals? true})
+      (wrap-json-response)))
 
 (defn -main
   []
@@ -58,4 +60,4 @@
                      :db                   db-config})
 
   (log/info "booting server ... ")
-  (run-jetty app {:port 3000}))
+  (run-jetty app {:join? false :port 3000}))
