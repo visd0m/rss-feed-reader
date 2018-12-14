@@ -17,7 +17,7 @@
   (let [xmlReader (new XmlReader (new URL url))]
     (let [feed (.build (new SyndFeedInput) xmlReader)] feed)))
 
-; ==== get
+; ==== GET
 
 (defn get-list-subscriptions-handler
   [req]
@@ -32,15 +32,20 @@
       (res/response result)
       (res/not-found "not found"))))
 
-; ==== post
+; ==== POST
 
 (defn post-subscription-handler [req]
   (let [subscription (:body req)]
-    (log/info subscription)
-    (->
-      subscription
-      (subscription/insert)
-      (res/response))))
+    (log/info "trying inserting subscription=" subscription)
+
+    (if (empty? (subscription/by-url (:url subscription)))
+      (->
+        subscription
+        (subscription/insert)
+        (res/response))
+      (res/bad-request (str "url=" (:url subscription) " already present")))))
+
+; ==== APIs
 
 (def routes ["/subscriptions"
              {""        {:get  (fn [req] (get-list-subscriptions-handler req))
@@ -48,6 +53,8 @@
               ["/" :id] {:get (fn [req] (get-subscription-handler req))}}])
 
 (def handler (make-handler routes))
+
+; ====
 
 (def app
   (-> handler

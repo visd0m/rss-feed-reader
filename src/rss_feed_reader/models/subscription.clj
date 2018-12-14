@@ -23,8 +23,16 @@
   ([id]
    (by-id id (db/db-connection)))
   ([id conn]
-   (log/info "loading subscription for id=" id)
+   (log/info "loading subscription by id=" id)
    (first (sql/query conn ["select * from subscription where id = (?::uuid)" id]))))
+
+(defn by-url
+  "get subscriptions by url"
+  ([url]
+   (by-url url (db/db-connection)))
+  ([url conn]
+   (log/info "loading subscriptions by url=" url)
+   (sql/query conn ["select * from subscription where url = ?" url])))
 
 ; ==== insert
 
