@@ -27,8 +27,10 @@
 (defn get-subscription-handler
   [{:keys [route-params]}]
   (log/info route-params)
-  (res/response
-    (subscription/by-id (:id route-params))))
+  (let [result (subscription/by-id (:id route-params))]
+    (if result
+      (res/response result)
+      (res/not-found "not found"))))
 
 ; ==== post
 
