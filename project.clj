@@ -8,8 +8,6 @@
 
                  [com.rometools/rome "1.12.0"]
 
-                 [cheshire "5.8.1"]
-
                  [org.clojure/tools.logging "0.3.1"]
                  [ch.qos.logback/logback-classic "1.1.3"]
 
@@ -23,4 +21,5 @@
                  [org.clojure/java.jdbc "0.7.8"]
                  [org.postgresql/postgresql "9.4-1201-jdbc41"]
                  [clojure.jdbc/clojure.jdbc-c3p0 "0.3.3"]
-                 [migratus "1.2.0"]])
+                 [migratus "1.2.0"]
+                 [clojurewerkz/quartzite "2.1.0"]])
