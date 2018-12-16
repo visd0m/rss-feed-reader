@@ -22,4 +22,5 @@
                  [org.postgresql/postgresql "9.4-1201-jdbc41"]
                  [clojure.jdbc/clojure.jdbc-c3p0 "0.3.3"]
                  [migratus "1.2.0"]
-                 [clojurewerkz/quartzite "2.1.0"]])
+                 [clojurewerkz/quartzite "2.1.0"]
+                 [cheshire "5.8.1"]])

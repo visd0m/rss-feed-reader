@@ -1,14 +1,9 @@
-(ns rss-feed-reader.models.db
+(ns rss-feed-reader.model.db
   (:import com.mchange.v2.c3p0.ComboPooledDataSource))
 
-(def db-name
-  "rss-feed-reader")
+(def db-name "rss-feed-reader")
 
-(def db-user
-  "rss-feed-reader-user")
-
-(def db-url
-  "postgresql://localhost:5432/" db-name)
+(def db-user "rss-feed-reader-user")
 
 (def db-config {:dbtype      "postgresql"
                 :classname   "org.postgresql.Driver"

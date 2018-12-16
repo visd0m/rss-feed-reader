@@ -1,10 +1,10 @@
-(ns rss-feed-reader.models.subscription
+(ns rss-feed-reader.model.subscription
   (:require [clojure.tools.logging :as log]
             [clojure.java.jdbc :as sql]
             [clojure.spec.alpha :as s]
             [clojure.walk]
-            [rss-feed-reader.models.db :as db]
-            [rss-feed-reader.models.auto-complete :as auto-complete]))
+            [rss-feed-reader.model.db :as db]
+            [rss-feed-reader.model.auto-complete :as auto-complete]))
 
 
 (s/def ::insert-subscription (s/keys :req-un [::url]

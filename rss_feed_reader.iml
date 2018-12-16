@@ -17,14 +17,14 @@
     <orderEntry type="library" name="Leiningen: c3p0:0.9.1.1" level="project" />
     <orderEntry type="library" name="Leiningen: ch.qos.logback/logback-classic:1.1.3" level="project" />
     <orderEntry type="library" name="Leiningen: ch.qos.logback/logback-core:1.1.3" level="project" />
-    <orderEntry type="library" name="Leiningen: cheshire:5.5.0" level="project" />
+    <orderEntry type="library" name="Leiningen: cheshire:5.8.1" level="project" />
     <orderEntry type="library" name="Leiningen: clj-time:0.14.3" level="project" />
     <orderEntry type="library" name="Leiningen: clojure-complete:0.2.4" level="project" />
     <orderEntry type="library" name="Leiningen: clojure.jdbc/clojure.jdbc-c3p0:0.3.3" level="project" />
     <orderEntry type="library" name="Leiningen: clojurewerkz/quartzite:2.1.0" level="project" />
-    <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.core/jackson-core:2.5.3" level="project" />
-    <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.dataformat/jackson-dataformat-cbor:2.5.3" level="project" />
-    <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.dataformat/jackson-dataformat-smile:2.5.3" level="project" />
+    <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.core/jackson-core:2.9.6" level="project" />
+    <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.dataformat/jackson-dataformat-cbor:2.9.6" level="project" />
+    <orderEntry type="library" name="Leiningen: com.fasterxml.jackson.dataformat/jackson-dataformat-smile:2.9.6" level="project" />
     <orderEntry type="library" name="Leiningen: com.mchange/c3p0:0.9.5.2" level="project" />
     <orderEntry type="library" name="Leiningen: com.mchange/mchange-commons-java:0.2.11" level="project" />
     <orderEntry type="library" name="Leiningen: com.rometools/rome-utils:1.12.0" level="project" />

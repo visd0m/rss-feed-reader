@@ -1,4 +1,4 @@
-(ns rss-feed-reader.models.auto-complete)
+(ns rss-feed-reader.model.auto-complete)
 
 (defn autocomplete-id
   "set entity id if missing"

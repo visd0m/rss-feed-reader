@@ -3,19 +3,20 @@
             [clojurewerkz.quartzite.jobs :refer :all :as j]
             [clojurewerkz.quartzite.jobs :refer [defjob]]
             [clojurewerkz.quartzite.triggers :as t]
+            [rss-feed-reader.rss-fetcher :refer :all :as rss-fetcher]
             [clojurewerkz.quartzite.schedule.cron :refer [schedule cron-schedule]]))
 
 (def jobs
   [{:job     (j/build
-               (j/of-type (defjob MyJob
-                            [context]
-                            (println "I am a job")))
+               (j/of-type (defjob rss-fetching-job
+                            [_]
+                            (rss-fetcher/fetch-all-subscriptions)))
                (j/with-identity (j/key "jobs.job.1")))
     :trigger (t/build
                (t/with-identity (t/key "triggers.1"))
                (t/start-now)
                (t/with-schedule (schedule
-                                  (cron-schedule "0/5 * * ? * *"))))}])
+                                  (cron-schedule "* 0/5 * * * ?"))))}])
 
 (defn start-scheduler-with-jobs
   []
