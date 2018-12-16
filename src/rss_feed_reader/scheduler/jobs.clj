@@ -16,7 +16,7 @@
                (t/with-identity (t/key "triggers.1"))
                (t/start-now)
                (t/with-schedule (schedule
-                                  (cron-schedule "* 0/5 * * * ?"))))}])
+                                  (cron-schedule "0 */1 * * * ?"))))}])
 
 (defn start-scheduler-with-jobs
   []
