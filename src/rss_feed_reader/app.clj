@@ -68,8 +68,8 @@
    (log/info "starting migrations ... ")
    (migratus/migrate migratus-config)
 
-   (log/info "booting scheduler ... ")
+   (log/info "starting scheduler ... ")
    (jobs/start-scheduler-with-jobs)
 
-   (log/info "booting scheduler ... ")
+   (log/info "booting server ... ")
    (run-jetty app {:join? join :port 3000})))
