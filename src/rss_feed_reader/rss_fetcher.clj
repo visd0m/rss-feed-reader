@@ -17,35 +17,36 @@
   (try
     (let [xml-reader (-> subscription-url
                          (URL.)
-                         (XmlReader.))]
+                         (XmlReader.))
+          feed-items (-> (SyndFeedInput.)
+                         (.build xml-reader)
+                         (bean)
+                         (:entries))]
 
-      (let [feed-items (-> (SyndFeedInput.)
-                           (.build xml-reader)
-                           (bean)
-                           (:entries))]
-
-        (map (fn [^SyndEntry feed-item]
-               {:title          (.getTitle feed-item)
-                :author         (.getAuthor feed-item)
-                :link           (.getLink feed-item)
-                :published-date (.getPublishedDate feed-item)}) feed-items)))
+      (for [^SyndEntry feed-item feed-items]
+        {:title          (.getTitle feed-item)
+         :author         (.getAuthor feed-item)
+         :link           (.getLink feed-item)
+         :published-date (.getPublishedDate feed-item)}))
 
     (catch Exception e
       (log/error "an error occurred fetching subscription=" subscription-url ", error=" e))))
 
 (defn get-feed-item-hash
   [feed-item]
-  (let [bytes (-> (MessageDigest/getInstance "MD5")
-                  (.digest (.getBytes (str (:title feed-item) (:link feed-item)))))]
-    (String. (.encode (Base64/getEncoder) bytes) "UTF-8")))
+  (let [bytes (.getBytes (str (:title feed-item) (:link feed-item)))
+        hash (-> (MessageDigest/getInstance "MD5")
+                 (.digest bytes))]
+    (String. (.encode (Base64/getEncoder) hash) "UTF-8")))
 
 (defn fetch-all-subscriptions
   []
   (let [subscriptions (subscription/all)]
-    (doseq [subscription subscriptions]
-      (doseq [feed-item (fetch-subscription (:url subscription))]
-        (let [hash (get-feed-item-hash feed-item)]
-          (if (empty? (feed-item/by-hash hash))
-            (feed-item/insert {:subscription-id (:id subscription)
-                               :item            (generate-string feed-item)
-                               :hash            hash})))))))
+    (doseq [subscription subscriptions
+            feed-item (fetch-subscription (:url subscription))]
+      (let [hash (get-feed-item-hash feed-item)]
+        (when (empty? (feed-item/by-hash hash))
+          (feed-item/insert {:subscription-id (:id subscription)
+                             :item            (generate-string feed-item)
+                             :hash            hash}))))))
+

@@ -6,17 +6,16 @@
             [rss-feed-reader.rss-fetcher :refer :all :as rss-fetcher]
             [clojurewerkz.quartzite.schedule.cron :refer [schedule cron-schedule]]))
 
-(def jobs
-  [{:job     (j/build
-               (j/of-type (defjob rss-fetching-job
-                            [_]
-                            (rss-fetcher/fetch-all-subscriptions)))
-               (j/with-identity (j/key "jobs.job.1")))
-    :trigger (t/build
-               (t/with-identity (t/key "triggers.1"))
-               (t/start-now)
-               (t/with-schedule (schedule
-                                  (cron-schedule "0 */1 * * * ?"))))}])
+(def jobs [{:job     (j/build
+                       (j/of-type (defjob rss-fetching-job
+                                    [_]
+                                    (rss-fetcher/fetch-all-subscriptions)))
+                       (j/with-identity (j/key "jobs.job.1")))
+            :trigger (t/build
+                       (t/with-identity (t/key "triggers.1"))
+                       (t/start-now)
+                       (t/with-schedule (schedule
+                                          (cron-schedule "0 */1 * * * ?"))))}])
 
 (defn start-scheduler-with-jobs
   []

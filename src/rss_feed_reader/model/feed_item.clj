@@ -23,9 +23,13 @@
   ([subscription-id]
    (by-subscription-id subscription-id (db/db-connection)))
   ([subscription-id connection]
-   (log/info "loading feed items by subscription id")
-   (into [] (sql/query connection
-                       ["select * from feed_item where subscription_id = (?::uuid)" subscription-id]))))
+   (log/info "loading feed items by subscription id=")
+   (into [] (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %)))))
+                 (sql/query connection
+                            ["select *
+                            from feed_item
+                            where subscription_id = (?::uuid) order by insert_date desc
+                            limit 10" subscription-id])))))
 
 (defn by-hash
   "load feed items by hash"

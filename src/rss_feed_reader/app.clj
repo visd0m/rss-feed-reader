@@ -1,7 +1,8 @@
 (ns rss-feed-reader.app
   (:use ring.adapter.jetty)
-  (:require [rss-feed-reader.model.subscription :as subscription])
-  (:require [rss-feed-reader.model.db :refer :all]
+  (:require [rss-feed-reader.model.subscription :as subscription]
+            [rss-feed-reader.model.feed-item :as feed-item]
+            [rss-feed-reader.model.db :refer :all]
             [ring.util.response :as res]
             [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
             [bidi.ring :refer (make-handler)]
@@ -17,10 +18,19 @@
   (res/response (subscription/all)))
 
 (defn- get-subscription-handler
-  [{:keys [route-params]}]
-  (log/info route-params)
-  (if-let [result (subscription/by-id (:id route-params))]
+  [{:keys [params]}]
+  (log/info params)
+  (if-let [result (subscription/by-id (:id params))]
     (res/response result)
+    (res/not-found "not found")))
+
+(defn- get-list-feed-items-handler
+  [{:keys [params]}]
+  (log/info params)
+  (if-let [subscription (subscription/by-id (:id params))]
+    (-> (:id subscription)
+        (feed-item/by-subscription-id)
+        (res/response))
     (res/not-found "not found")))
 
 ; ==== POST
@@ -39,9 +49,11 @@
 ; ==== APIs
 
 (def routes ["/subscriptions"
-             {""        {:get  (fn [req] (get-list-subscriptions-handler req))
-                         :post (fn [req] (post-subscription-handler req))}
-              ["/" :id] {:get (fn [req] (get-subscription-handler req))}}])
+             [["" {:get  (fn [req] (get-list-subscriptions-handler req))
+                   :post (fn [req] (post-subscription-handler req))}]
+              [["/" :id]
+               [["" {:get (fn [req] (get-subscription-handler req))}]
+                ["/feed_items" {:get (fn [req] (get-list-feed-items-handler req))}]]]]])
 
 ; ====
 
@@ -53,11 +65,10 @@
       (wrap-json-body {:keywords? true :bigdecimals? true})
       (wrap-json-response)))
 
-(def migratus-config
-  {:store                :database,
-   :migration-dir        "migrations/",
-   :init-in-transaction? false,
-   :db                   db-config})
+(def migratus-config {:store                :database,
+                      :migration-dir        "migrations/",
+                      :init-in-transaction? false,
+                      :db                   db-config})
 
 ; ==== main
 
