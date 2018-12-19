@@ -1,9 +1,9 @@
-(ns rss-feed-reader.model.subscription
+(ns rss-feed-reader.model.subscription-model
   (:require [clojure.tools.logging :as log]
             [clojure.java.jdbc :as sql]
             [clojure.spec.alpha :as s]
             [clojure.walk]
-            [rss-feed-reader.model.db :as db]
+            [rss-feed-reader.config.db :as db]
             [rss-feed-reader.model.auto-complete :as auto-complete]))
 
 

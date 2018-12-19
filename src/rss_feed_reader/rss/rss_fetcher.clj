@@ -1,4 +1,4 @@
-(ns rss-feed-reader.rss-fetcher
+(ns rss-feed-reader.rss.rss-fetcher
   (:import (com.rometools.rome.io SyndFeedInput XmlReader)
            (java.net URL)
            (java.security MessageDigest)
@@ -7,8 +7,8 @@
            (com.rometools.rome.feed.synd SyndEntry))
   (:require [clojure.tools.logging :as log]
             [cheshire.core :refer :all]
-            [rss-feed-reader.model.subscription :as subscription]
-            [rss-feed-reader.model.feed-item :as feed-item]))
+            [rss-feed-reader.model.subscription-model :as subscription]
+            [rss-feed-reader.model.feed-item-model :as feed-item]))
 
 (defn fetch-subscription
   [subscription-url]

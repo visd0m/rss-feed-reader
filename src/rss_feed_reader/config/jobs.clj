@@ -1,9 +1,9 @@
-(ns rss-feed-reader.scheduler.jobs
+(ns rss-feed-reader.config.jobs
   (:require [clojurewerkz.quartzite.scheduler :as qs]
             [clojurewerkz.quartzite.jobs :refer :all :as j]
             [clojurewerkz.quartzite.jobs :refer [defjob]]
             [clojurewerkz.quartzite.triggers :as t]
-            [rss-feed-reader.rss-fetcher :refer :all :as rss-fetcher]
+            [rss-feed-reader.rss.rss-fetcher :refer :all :as rss-fetcher]
             [clojurewerkz.quartzite.schedule.cron :refer [schedule cron-schedule]]))
 
 (def jobs [{:job     (j/build

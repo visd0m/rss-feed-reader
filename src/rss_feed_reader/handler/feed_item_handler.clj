@@ -1,0 +1,22 @@
+(ns rss-feed-reader.handler.feed-item-handler
+  (:require [ring.util.response :as res]
+            [rss-feed-reader.handler.common :refer :all]
+            [rss-feed-reader.model.feed-item-model :as feed-item]
+            [rss-feed-reader.model.subscription-model :as subscription]
+            [clojure.tools.logging :as log]))
+
+(defn get-list-feed-items
+  "get paginated list of feed items"
+  [{path-params  :params
+    query-params :query-params}]
+  (log/info path-params)
+  (log/info query-params)
+
+  (if-let [subscription (subscription/by-id (:id path-params))]
+    (let [starting-after (get-starting-after query-params #(:order_unique (first (feed-item/by-id %))))
+          limit (get-limit query-params)
+          items (-> (:id subscription)
+                    (feed-item/by-subscription-id starting-after (+ 1 limit)))]
+      (res/response {:has_more (> (count items) limit)
+                     :data     (take limit items)}))
+    (res/not-found "not found")))

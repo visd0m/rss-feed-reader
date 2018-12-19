@@ -1,4 +1,4 @@
-(ns rss-feed-reader.model.db
+(ns rss-feed-reader.config.db
   (:import com.mchange.v2.c3p0.ComboPooledDataSource))
 
 (def db-name "rss-feed-reader")

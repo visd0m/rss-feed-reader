@@ -1,59 +1,23 @@
 (ns rss-feed-reader.app
   (:use ring.adapter.jetty)
-  (:require [rss-feed-reader.model.subscription :as subscription]
-            [rss-feed-reader.model.feed-item :as feed-item]
-            [rss-feed-reader.model.db :refer :all]
-            [ring.util.response :as res]
+  (:require [rss-feed-reader.handler.subscription-handler :as subscription-handler])
+  (:require [rss-feed-reader.handler.feed-item-handler :as feed-item-handler]
+            [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
             [bidi.ring :refer (make-handler)]
             [clojure.tools.logging :as log]
             [migratus.core :as migratus]
-            [rss-feed-reader.scheduler.jobs :refer :all :as jobs]))
-
-; ==== GET
-
-(defn- get-list-subscriptions-handler
-  [req]
-  (log/info req)
-  (res/response (subscription/all)))
-
-(defn- get-subscription-handler
-  [{:keys [params]}]
-  (log/info params)
-  (if-let [result (subscription/by-id (:id params))]
-    (res/response result)
-    (res/not-found "not found")))
-
-(defn- get-list-feed-items-handler
-  [{:keys [params]}]
-  (log/info params)
-  (if-let [subscription (subscription/by-id (:id params))]
-    (-> (:id subscription)
-        (feed-item/by-subscription-id)
-        (res/response))
-    (res/not-found "not found")))
-
-; ==== POST
-
-(defn- post-subscription-handler
-  "doc"
-  [req]
-  (let [subscription (:body req)]
-    (log/info "trying inserting subscription=" subscription)
-    (if (empty? (subscription/by-url (:url subscription)))
-      (-> subscription
-          (subscription/insert)
-          (res/response))
-      (res/bad-request (str "url=" (:url subscription) " already present")))))
+            [rss-feed-reader.config.db :refer :all]
+            [rss-feed-reader.config.jobs :refer :all :as jobs]))
 
 ; ==== APIs
 
 (def routes ["/subscriptions"
-             [["" {:get  (fn [req] (get-list-subscriptions-handler req))
-                   :post (fn [req] (post-subscription-handler req))}]
+             [["" {:get  (fn [req] (subscription-handler/get-list-subscriptions req))
+                   :post (fn [req] (subscription-handler/post-subscription req))}]
               [["/" :id]
-               [["" {:get (fn [req] (get-subscription-handler req))}]
-                ["/feed_items" {:get (fn [req] (get-list-feed-items-handler req))}]]]]])
+               [["" {:get (fn [req] (subscription-handler/get-subscription req))}]
+                ["/feed_items" {:get (fn [req] (feed-item-handler/get-list-feed-items req))}]]]]])
 
 ; ====
 
@@ -62,6 +26,7 @@
 
 (def app
   (-> handler
+      (wrap-params)
       (wrap-json-body {:keywords? true :bigdecimals? true})
       (wrap-json-response)))
 

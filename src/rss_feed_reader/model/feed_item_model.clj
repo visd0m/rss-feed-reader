@@ -1,13 +1,13 @@
-(ns rss-feed-reader.model.feed-item
+(ns rss-feed-reader.model.feed-item-model
   (:require [clojure.tools.logging :as log]
-            [rss-feed-reader.model.db :as db]
+            [rss-feed-reader.config.db :as db]
             [clojure.java.jdbc :as sql]
             [clojure.spec.alpha :as s]
             [cheshire.core :refer :all]
             [rss-feed-reader.model.auto-complete :as auto-complete]))
 
 (s/def ::insert-feed-item (s/keys :req-un [::subscription-id ::hash ::item]
-                                  :opt-un [::id ::insert_date ::version ::update_date]))
+                                  :opt-un [::id ::insert-date ::version ::update-date ::order-unique]))
 
 ; ==== load
 
@@ -19,17 +19,18 @@
    (sql/query connection ["select * from feed_item where id = (?::uuid)" id])))
 
 (defn by-subscription-id
-  "load feed items by subscription id"
-  ([subscription-id]
-   (by-subscription-id subscription-id (db/db-connection)))
-  ([subscription-id connection]
-   (log/info "loading feed items by subscription id=")
+  "load feed items by subscription id paginating over order-unique"
+  ([subscription-id starting-after limit]
+   (by-subscription-id subscription-id starting-after limit (db/db-connection)))
+  ([subscription-id starting-after limit connection]
+   (log/info "loading feed items by subscription id=" subscription-id " starting after=" starting-after " limit=" limit)
    (into [] (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %)))))
-                 (sql/query connection
-                            ["select *
-                            from feed_item
-                            where subscription_id = (?::uuid) order by insert_date desc
-                            limit 10" subscription-id])))))
+                 (let [query (str "select *
+                              from feed_item
+                              where subscription_id = (?::uuid)"
+                                  (if starting-after (str "and order_unique < " starting-after)) ""
+                                  "order by order_unique desc limit ?")]
+                   (sql/query connection [query subscription-id (int limit)]))))))
 
 (defn by-hash
   "load feed items by hash"
@@ -47,7 +48,8 @@
   (-> feed-item
       (auto-complete/autocomplete-id)
       (auto-complete/autocomplete-insert-date)
-      (auto-complete/autocomplete-version)))
+      (auto-complete/autocomplete-version)
+      (auto-complete/auto-complete-order-unique)))
 
 (defn insert
   "insert feed item"
@@ -56,11 +58,12 @@
   (let [autocompleted-feed-item (autocomplete-feed-item-insert feed-item)]
     (log/info "creating feed-item=" autocompleted-feed-item)
     (sql/with-db-transaction [conn (db/db-connection)]
-                             (sql/execute! conn ["insert into feed_item values((?::uuid),(?::uuid),(?::json),?,?,?,?)"
+                             (sql/execute! conn ["insert into feed_item values((?::uuid),(?::uuid),(?::json),?,?,?,?,?)"
                                                  (:id autocompleted-feed-item)
                                                  (:subscription-id autocompleted-feed-item)
                                                  (:item autocompleted-feed-item)
                                                  (:hash autocompleted-feed-item)
+                                                 (:order-unique autocompleted-feed-item)
                                                  (:insert_date autocompleted-feed-item)
                                                  (:update_date autocompleted-feed-item)
                                                  (:version autocompleted-feed-item)])
