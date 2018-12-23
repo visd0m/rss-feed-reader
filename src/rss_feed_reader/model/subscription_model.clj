@@ -59,5 +59,3 @@
                                                  (:update_date autocompleted-subscription)
                                                  (:version autocompleted-subscription)])
                              (by-id (:id autocompleted-subscription) conn))))
-
-
