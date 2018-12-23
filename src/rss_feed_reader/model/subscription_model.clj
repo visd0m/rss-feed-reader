@@ -8,7 +8,7 @@
 
 
 (s/def ::insert-subscription (s/keys :req-un [::url]
-                                     :opt-un [::id ::insert_date ::version ::update_date]))
+                                     :opt-un [::id ::insert-date ::version ::update-date]))
 
 ; ==== load
 

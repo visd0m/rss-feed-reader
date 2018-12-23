@@ -1,6 +1,8 @@
-(ns rss-feed-reader.handler.common)
+(ns rss-feed-reader.handler.common
+  (:require [clojure.spec.alpha :as s]))
 
 (defn get-starting-after
+  "extract field used as starting after to paginate entity, using starting after query params"
   [{starting-after "starting_after"} query-param-extractor]
   (if starting-after
     (-> starting-after
@@ -16,3 +18,9 @@
         (min 100)
         (max 1))
     20))
+
+(defn get-paginated-list
+  "get paginated list given a collection and a limit"
+  [coll limit]
+  {:has_more (> (count coll) limit)
+   :data     (take limit coll)})

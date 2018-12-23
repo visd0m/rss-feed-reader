@@ -17,6 +17,5 @@
           limit (get-limit query-params)
           items (-> (:id subscription)
                     (feed-item/by-subscription-id starting-after (+ 1 limit)))]
-      (res/response {:has_more (> (count items) limit)
-                     :data     (take limit items)}))
+      (res/response (get-paginated-list items limit)))
     (res/not-found "not found")))
