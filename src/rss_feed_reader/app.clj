@@ -13,10 +13,11 @@
 ; ==== APIs
 
 (def routes ["/subscriptions"
-             [["" {:get  #(subscription-handler/get-list-subscriptions %)
-                   :post #(subscription-handler/post-subscription %)}]
+             [["" {:get  #(subscription-handler/get-all %)
+                   :post #(subscription-handler/post %)}]
               [["/" :id]
-               [["" {:get #(subscription-handler/get-subscription %)}]
+               [["" {:get    #(subscription-handler/get %)
+                     :delete #(subscription-handler/delete %)}]
                 ["/feed_items" {:get #(feed-item-handler/get-list-feed-items %)}]]]]])
 
 ; ====

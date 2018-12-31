@@ -8,13 +8,13 @@
 
 ; === GET
 
-(defn get-list-subscriptions
+(defn get-all
   "load list of all subscriptions without paginating"
   [req]
   (log/info req)
   (res/response (subscription/all)))
 
-(defn get-subscription
+(defn get
   "load subscription by id"
   [{:keys [params]}]
   (log/info params)
@@ -24,7 +24,7 @@
 
 ; === POST
 
-(defn post-subscription
+(defn post
   "create new subscription"
   [{subscription :body}]
   {:pre [(s/valid? ::post-subscription subscription)]}
@@ -34,3 +34,13 @@
         (subscription/insert)
         (res/response))
     (res/bad-request (str "url=" (:url subscription) " already present"))))
+
+(defn delete
+  "logically delete subscription"
+  [{:keys [params]}]
+  (log/info "deleting subscription")
+  (if-let [subscription (subscription/by-id (:id params))]
+    (subscription/update-skip-null {:id      (:id subscription)
+                                    :version (:version subscription)
+                                    :enabled false})
+    (res/bad-request (str "can not find subscription for id=" (:id params)))))
