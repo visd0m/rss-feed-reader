@@ -4,7 +4,7 @@
             [clojure.java.jdbc :as sql]
             [clojure.spec.alpha :as s]
             [cheshire.core :refer :all]
-            [rss-feed-reader.model.auto-complete :as auto-complete]))
+            [rss-feed-reader.model.common :refer :all]))
 
 (s/def ::insert-feed-item (s/keys :req-un [::subscription-id ::hash ::item]
                                   :opt-un [::id ::insert-date ::version ::update-date ::order-unique]))
@@ -42,29 +42,16 @@
 
 ; ==== insert
 
-(defn autocomplete-feed-item-insert
-  "auto complete missing field of subscription"
-  [feed-item]
-  (-> feed-item
-      (auto-complete/autocomplete-id)
-      (auto-complete/autocomplete-insert-date)
-      (auto-complete/autocomplete-version)
-      (auto-complete/auto-complete-order-unique)))
-
 (defn insert
   "insert feed item"
-  [feed-item]
-  {:pre [(s/valid? ::insert-feed-item feed-item)]}
-  (let [autocompleted-feed-item (autocomplete-feed-item-insert feed-item)]
-    (log/info "creating feed-item=" autocompleted-feed-item)
-    (sql/with-db-transaction [conn (db/db-connection)]
-                             (sql/execute! conn ["insert into feed_item values((?::uuid),(?::uuid),(?::json),?,?,?,?,?)"
-                                                 (:id autocompleted-feed-item)
-                                                 (:subscription-id autocompleted-feed-item)
-                                                 (:item autocompleted-feed-item)
-                                                 (:hash autocompleted-feed-item)
-                                                 (:order-unique autocompleted-feed-item)
-                                                 (:insert_date autocompleted-feed-item)
-                                                 (:update_date autocompleted-feed-item)
-                                                 (:version autocompleted-feed-item)])
-                             (by-id (:id autocompleted-feed-item) conn))))
+  ([feed-item]
+   {:pre [(s/valid? ::insert-feed-item feed-item)]}
+   (insert feed-item (db/db-connection)))
+  ([feed-item conn]
+   (let [autocompleted-feed-item (autocomplete-insert feed-item)]
+     (log/info "creating feed-item=" autocompleted-feed-item)
+     (sql/with-db-transaction [conn (db/db-connection)]
+                              (sql/execute! conn [(entity->sql-insert autocompleted-feed-item "feed_item" {:id              "uuid"
+                                                                                                           :subscription-id "uuid"
+                                                                                                           :item            "json"})])
+                              (by-id (:id autocompleted-feed-item) conn)))))
