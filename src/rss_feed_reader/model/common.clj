@@ -52,7 +52,7 @@
       (autocomplete-update-date)
       (set-or-increment-version)))
 
-(defn escape-quotes
+(defn escape-single-quote
   [string-to-escape]
   ; fixme
   (clojure.string/replace string-to-escape "'" ""))
@@ -69,8 +69,8 @@
         values (->>
                  (keys entity)
                  (map #(if-let [type (% custom-types-by-key)]
-                         (str "('" (escape-quotes (% entity)) "'" "::" type ")")
-                         (str "'" (escape-quotes (% entity)) "'")))
+                         (str "('" (escape-single-quote (% entity)) "'" "::" type ")")
+                         (str "'" (escape-single-quote (% entity)) "'")))
                  (clojure.string/join ","))
         query (str "insert into " table " (" entity-keys ") values (" values ")")]
     (log/info "[INSERT]=" query)
@@ -81,8 +81,8 @@
 (defn- get-sql-update-assignment
   [entity custom-types-by-key key]
   (str (clojure.string/replace (clojure.core/name key) "-" "_") "=" (if-let [type (key custom-types-by-key)]
-                                                                      (str "('" (escape-quotes (key entity)) "'" "::" type ")")
-                                                                      (str "'" (escape-quotes (key entity)) "'"))))
+                                                                      (str "('" (escape-single-quote (key entity)) "'" "::" type ")")
+                                                                      (str "'" (escape-single-quote (key entity)) "'"))))
 
 (defn entity->sql-update-skip-null
   "generate update skip null postgres sql statement"
