@@ -54,7 +54,8 @@
 
 (defn escape-quotes
   [string-to-escape]
-  (clojure.string/replace string-to-escape "'" "\\\\'"))
+  ; fixme
+  (clojure.string/replace string-to-escape "'" ""))
 
 ; === insert
 
