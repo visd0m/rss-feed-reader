@@ -20,17 +20,21 @@
 
 (defn by-subscription-id
   "load feed items by subscription id paginating over order-unique"
-  ([subscription-id starting-after limit]
-   (by-subscription-id subscription-id starting-after limit (db/db-connection)))
-  ([subscription-id starting-after limit connection]
+  ([subscription-id starting-after search limit]
+   (by-subscription-id subscription-id starting-after search limit (db/db-connection)))
+  ([subscription-id starting-after search limit connection]
    (log/info "loading feed items by subscription id=" subscription-id " starting after=" starting-after " limit=" limit)
-   (into [] (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %)))))
-                 (let [query (str "select *
-                              from feed_item
-                              where subscription_id = (?::uuid)"
-                                  (if starting-after (str "and order_unique < " starting-after)) ""
-                                  "order by order_unique desc limit ?")]
-                   (sql/query connection [query subscription-id (int limit)]))))))
+   (let [query (str "select * from feed_item where subscription_id = ('" subscription-id "'::uuid)"
+                    (reduce (fn [acc entry]
+                              (str acc " and item->>'" (key entry) "' ilike '%" (val entry) "%'"))
+                            ""
+                            (dissoc search "starting_after" "limit"))
+                    (if starting-after (str " and order_unique < " starting-after)) ""
+                    " order by order_unique desc limit " (int limit))
+         result (do (println "[SELECT] " query)
+                    (sql/query connection [query]))]
+     (into []
+           (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result)))))
 
 (defn by-hash
   "load feed items by hash"

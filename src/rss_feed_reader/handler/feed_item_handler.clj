@@ -15,7 +15,8 @@
   (if-let [subscription (subscription/by-id (:id path-params))]
     (let [starting-after (get-starting-after query-params #(:order_unique (first (feed-item/by-id %))))
           limit (get-limit query-params)
+          search query-params
           items (-> (:id subscription)
-                    (feed-item/by-subscription-id starting-after (+ 1 limit)))]
+                    (feed-item/by-subscription-id starting-after search (+ 1 limit)))]
       (res/response (get-paginated-list items limit)))
     (res/not-found "not found")))
