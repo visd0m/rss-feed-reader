@@ -26,7 +26,7 @@
    (log/info "loading feed items by subscription id=" subscription-id " starting after=" starting-after " limit=" limit)
    (let [query (str "select * from feed_item where subscription_id = ('" subscription-id "'::uuid)"
                     (reduce (fn [acc entry]
-                              (str acc " and item->>'" (key entry) "' ilike '%" (val entry) "%'"))
+                              (str acc " and item->>'" (key entry) "' ilike '%" (escape-single-quote (val entry)) "%'"))
                             ""
                             (dissoc search "starting_after" "limit"))
                     (if starting-after (str " and order_unique < " starting-after)) ""
@@ -55,7 +55,7 @@
    (let [autocompleted-feed-item (autocomplete-insert feed-item)]
      (log/info "creating feed-item=" autocompleted-feed-item)
      (sql/with-db-transaction [conn (db/db-connection)]
-                              (sql/execute! conn [(entity->sql-insert autocompleted-feed-item "feed_item" {:id              "uuid"
-                                                                                                           :subscription-id "uuid"
-                                                                                                           :item            "json"})])
+                              (sql/execute! conn [(to-sql-insert autocompleted-feed-item "feed_item" {:id                   "uuid"
+                                                                                                      :subscription-id "uuid"
+                                                                                                      :item            "json"})])
                               (by-id (:id autocompleted-feed-item) conn)))))

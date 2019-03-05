@@ -59,7 +59,7 @@
 
 ; === insert
 
-(defn entity->sql-insert
+(defn to-sql-insert
   "generate postgres sql insert statement"
   [entity table custom-types-by-key]
   (let [entity-keys (->>
@@ -84,7 +84,7 @@
                                                                       (str "('" (escape-single-quote (key entity)) "'" "::" type ")")
                                                                       (str "'" (escape-single-quote (key entity)) "'"))))
 
-(defn entity->sql-update-skip-null
+(defn to-sql-update-skip-null
   "generate update skip null postgres sql statement"
   [entity table custom-types-by-key id-key]
   (let [prefix (str "update " table " set ")

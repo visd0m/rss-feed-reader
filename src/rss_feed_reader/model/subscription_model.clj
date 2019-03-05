@@ -48,7 +48,7 @@
    (let [autocompleted-subscription (autocomplete-insert subscription)]
      (log/info "creating subscription=" autocompleted-subscription)
      (sql/with-db-transaction [conn (db/db-connection)]
-                              (sql/execute! conn [(entity->sql-insert autocompleted-subscription "subscription" {:id "uuid"})])
+                              (sql/execute! conn [(to-sql-insert autocompleted-subscription "subscription" {:id "uuid"})])
                               (by-id (:id autocompleted-subscription) conn)))))
 
 
@@ -63,5 +63,5 @@
    (let [autocompleted-subscription (autocomplete-update subscription)]
      (log/info "updating subscription=" autocompleted-subscription)
      (sql/with-db-transaction [conn (db/db-connection)]
-                              (sql/execute! conn [(entity->sql-update-skip-null autocompleted-subscription "subscription" {:id "uuid"} :id)])
+                              (sql/execute! conn [(to-sql-update-skip-null autocompleted-subscription "subscription" {:id "uuid"} :id)])
                               (by-id (:id autocompleted-subscription) conn)))))
