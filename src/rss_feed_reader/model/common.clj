@@ -54,7 +54,7 @@
 
 (defn escape-single-quote
   [string-to-escape]
-  ; fixme
+  ; todo here single quote is escaped in order to avoid query breaking; fix it
   (clojure.string/replace string-to-escape "'" ""))
 
 ; === insert
