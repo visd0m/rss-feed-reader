@@ -44,6 +44,15 @@
    (log/info "loading feed items by hash=" hash)
    (sql/query connection ["select * from feed_item where hash = ?" hash])))
 
+(defn by-date-after
+  ([date]
+   (by-date-after date (db/db-connection)))
+  ([date connection]
+   (log/info "loading feed items after date=" date)
+   (let [result (sql/query connection ["select * from feed_item where insert_date > (?::timestamp) order by insert_date asc" date])]
+     (into []
+           (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result)))))
+
 ; ==== insert
 
 (defn insert
@@ -55,7 +64,7 @@
    (let [autocompleted-feed-item (autocomplete-insert feed-item)]
      (log/info "creating feed-item=" autocompleted-feed-item)
      (sql/with-db-transaction [conn (db/db-connection)]
-                              (sql/execute! conn [(to-sql-insert autocompleted-feed-item "feed_item" {:id                   "uuid"
+                              (sql/execute! conn [(to-sql-insert autocompleted-feed-item "feed_item" {:id              "uuid"
                                                                                                       :subscription-id "uuid"
                                                                                                       :item            "json"})])
                               (by-id (:id autocompleted-feed-item) conn)))))

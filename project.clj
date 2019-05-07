@@ -23,4 +23,6 @@
                  [clojure.jdbc/clojure.jdbc-c3p0 "0.3.3"]
                  [migratus "1.2.0"]
                  [clojurewerkz/quartzite "2.1.0"]
-                 [cheshire "5.8.1"]])
+                 [cheshire "5.8.1"]]
+  :aot [rss-feed-reader.app]
+  :main rss-feed-reader.app)

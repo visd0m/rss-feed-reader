@@ -7,11 +7,11 @@
             [rss-feed-reader.model.common :refer :all]))
 
 
-(s/def ::insert-subscription (s/keys :req-un [::url]
+(s/def ::insert-subscription (s/keys :req-un [::url ::tag]
                                      :opt-un [::id ::enabled]))
 
 (s/def ::update-skip-null-subscription (s/keys :req-un [::id ::version]
-                                               :opt-un [::url ::enabled]))
+                                               :opt-un [::url ::enabled ::tag]))
 
 ; ==== load
 

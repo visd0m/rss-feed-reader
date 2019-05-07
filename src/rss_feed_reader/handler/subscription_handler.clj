@@ -4,7 +4,7 @@
             [ring.util.response :as res]
             [clojure.spec.alpha :as s]))
 
-(s/def ::post-subscription (s/keys :req-un [::url]))
+(s/def ::post-subscription (s/keys :req-un [::url ::tag]))
 
 ; === GET
 

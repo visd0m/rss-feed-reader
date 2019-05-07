@@ -8,7 +8,8 @@
             [clojure.tools.logging :as log]
             [migratus.core :as migratus]
             [rss-feed-reader.config.db :refer :all]
-            [rss-feed-reader.config.jobs :refer :all :as jobs]))
+            [rss-feed-reader.config.jobs :refer :all :as jobs])
+  (:gen-class))
 
 ; ==== APIs
 

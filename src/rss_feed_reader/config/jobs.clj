@@ -4,6 +4,7 @@
             [clojurewerkz.quartzite.jobs :refer [defjob]]
             [clojurewerkz.quartzite.triggers :as t]
             [rss-feed-reader.rss.rss-fetcher :refer :all :as rss-fetcher]
+            [rss-feed-reader.pushnews.push-news :refer :all :as push-news]
             [clojurewerkz.quartzite.schedule.cron :refer [schedule cron-schedule]]))
 
 (def jobs [{:job     (j/build
@@ -13,6 +14,16 @@
                        (j/with-identity (j/key "jobs.job.1")))
             :trigger (t/build
                        (t/with-identity (t/key "triggers.1"))
+                       (t/start-now)
+                       (t/with-schedule (schedule
+                                          (cron-schedule "0 */1 * * * ?"))))}
+           {:job     (j/build
+                       (j/of-type (defjob push-news-job
+                                    [_]
+                                    (push-news/push-news)))
+                       (j/with-identity (j/key "jobs.job.2")))
+            :trigger (t/build
+                       (t/with-identity (t/key "triggers.2"))
                        (t/start-now)
                        (t/with-schedule (schedule
                                           (cron-schedule "0 */1 * * * ?"))))}])
