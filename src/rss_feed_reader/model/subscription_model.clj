@@ -21,6 +21,8 @@
   (log/info "getting all subscriptions")
   (into [] (sql/query (db/db-connection) ["select * from subscription where enabled = true order by insert_date desc"])))
 
+; todo implement batch load
+
 (defn by-id
   "get subscription by id"
   ([id]

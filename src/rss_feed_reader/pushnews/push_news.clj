@@ -19,6 +19,7 @@
   []
   (let [news (feed_items/by-date-after (Timestamp/from (.minus (Instant/now) 1 (ChronoUnit/MINUTES))))]
     (log/info "news to notify=" news)
+    ; todo use batch load instead of single queries
     (let [news+subscription-tag (->> news
                                      (map (fn [to-notify]
                                             (assoc to-notify :tag (:tag (subscriptions/by-id (:subscription_id to-notify)))))))]
