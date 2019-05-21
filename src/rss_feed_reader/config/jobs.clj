@@ -4,29 +4,40 @@
             [clojurewerkz.quartzite.jobs :refer [defjob]]
             [clojurewerkz.quartzite.triggers :as t]
             [rss-feed-reader.rss.rss-fetcher :refer :all :as rss-fetcher]
+            [rss-feed-reader.telegram.telegram-fetcher :refer :all :as telegram]
             [rss-feed-reader.pushnews.push-news :refer :all :as push-news]
             [clojurewerkz.quartzite.schedule.cron :refer [schedule cron-schedule]]))
 
 (def jobs [{:job     (j/build
-                       (j/of-type (defjob rss-fetching-job
+                       (j/of-type (defjob fetch-rss-feeds
                                     [_]
-                                    (rss-fetcher/fetch-all-subscriptions)))
+                                    (rss-fetcher/fetch-all-feeds)))
                        (j/with-identity (j/key "jobs.job.1")))
             :trigger (t/build
                        (t/with-identity (t/key "triggers.1"))
                        (t/start-now)
                        (t/with-schedule (schedule
                                           (cron-schedule "0 */1 * * * ?"))))}
+           ;{:job     (j/build
+           ;            (j/of-type (defjob push-news-terminal-notifier
+           ;                         [_]
+           ;                         (push-news/push-news)))
+           ;            (j/with-identity (j/key "jobs.job.2")))
+           ; :trigger (t/build
+           ;            (t/with-identity (t/key "triggers.2"))
+           ;            (t/start-now)
+           ;            (t/with-schedule (schedule
+           ;                               (cron-schedule "0 */1 * * * ?"))))}
            {:job     (j/build
-                       (j/of-type (defjob push-news-job
+                       (j/of-type (defjob fetch-telegram-commands
                                     [_]
-                                    (push-news/push-news)))
-                       (j/with-identity (j/key "jobs.job.2")))
+                                    (telegram/fetch-commands)))
+                       (j/with-identity (j/key "jobs.job.3")))
             :trigger (t/build
-                       (t/with-identity (t/key "triggers.2"))
+                       (t/with-identity (t/key "triggers.3"))
                        (t/start-now)
                        (t/with-schedule (schedule
-                                          (cron-schedule "0 */1 * * * ?"))))}])
+                                          (cron-schedule "*/10 * * * * ?"))))}])
 
 (defn start-scheduler-with-jobs
   []

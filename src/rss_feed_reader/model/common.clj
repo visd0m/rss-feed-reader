@@ -98,3 +98,11 @@
         query (str prefix body suffix)]
     (log/info "[UPDATE-SKIP-NULL]=" query)
     query))
+
+; == batch load
+
+(defn to-batch-load-query
+  [query-string ids]
+  (let [string-ids (->> ids
+                        (map #(str "'" %1 "'")))]
+    (clojure.string/replace query-string "?" (clojure.string/join "," string-ids))))

@@ -6,7 +6,7 @@
             [cheshire.core :refer :all]
             [rss-feed-reader.model.common :refer :all]))
 
-(s/def ::insert-feed-item (s/keys :req-un [::subscription-id ::hash ::item]
+(s/def ::insert-feed-item (s/keys :req-un [::hash ::item ::feed-id]
                                   :opt-un [::id ::insert-date ::version ::update-date ::order-unique]))
 
 ; ==== load
@@ -52,6 +52,20 @@
    (let [result (sql/query connection ["select * from feed_item where insert_date > (?::timestamp) order by insert_date asc" date])]
      (into []
            (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result)))))
+
+(defn batch-by-feed-id-and-date-after
+  "Batch load feed items by feed ids"
+  ([ids date]
+   (batch-by-feed-id-and-date-after ids date (db/db-connection)))
+  ([ids date sql-connection]
+   (log/info "loading feed items by feed ids=" ids)
+   (let [result (sql/query sql-connection
+                           [(str (to-batch-load-query "select * from feed_item where feed_id in (?)" ids)
+                                 " and insert_date > (?::timestamp) order by insert_date desc")
+                            date])]
+     (into []
+           (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result)))))
+
 
 ; ==== insert
 

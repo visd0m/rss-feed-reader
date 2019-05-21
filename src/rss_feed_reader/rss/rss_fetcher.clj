@@ -7,15 +7,15 @@
            (com.rometools.rome.feed.synd SyndEntry))
   (:require [clojure.tools.logging :as log]
             [cheshire.core :refer :all]
-            [rss-feed-reader.model.subscription-model :as subscription]
-            [rss-feed-reader.model.feed-item-model :as feed-item]))
+            [rss-feed-reader.model.feed-item-model :as feed-item]
+            [rss-feed-reader.model.feed-model :as feed]))
 
-(defn fetch-subscription
-  [subscription-url]
-  (log/info "fetching subscription=" subscription-url)
+(defn fetch-feed
+  [feed-url]
+  (log/info "fetching feed=" feed-url)
 
   (try
-    (let [xml-reader (-> subscription-url
+    (let [xml-reader (-> feed-url
                          (URL.)
                          (XmlReader.))
           feed-items (-> (SyndFeedInput.)
@@ -30,7 +30,7 @@
          :published-date (.getPublishedDate feed-item)}))
 
     (catch Exception e
-      (log/error "an error occurred fetching subscription=" subscription-url ", error=" e))))
+      (log/error "an error occurred fetching feed=" feed-url ", error=" e))))
 
 (defn get-feed-item-hash
   [feed-item]
@@ -39,14 +39,14 @@
                  (.digest bytes))]
     (String. (.encode (Base64/getEncoder) hash) "UTF-8")))
 
-(defn fetch-all-subscriptions
+(defn fetch-all-feeds
   []
-  (let [subscriptions (subscription/all)]
-    (doseq [subscription subscriptions
-            feed-item (fetch-subscription (:url subscription))]
+  (let [feeds (feed/all-enabled)]
+    (doseq [feed feeds
+            feed-item (fetch-feed (:url feed))]
       (let [hash (get-feed-item-hash feed-item)]
         (when (empty? (feed-item/by-hash hash))
-          (feed-item/insert {:subscription-id (:id subscription)
-                             :item            (generate-string feed-item)
-                             :hash            hash}))))))
+          (feed-item/insert {:feed-id (:id feed)
+                             :item    (generate-string feed-item)
+                             :hash    hash}))))))
 

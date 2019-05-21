@@ -1,7 +1,8 @@
 (ns rss-feed-reader.app
   (:use ring.adapter.jetty)
-  (:require [rss-feed-reader.handler.subscription-handler :as subscription-handler])
   (:require [rss-feed-reader.handler.feed-item-handler :as feed-item-handler]
+            [rss-feed-reader.handler.subscription-handler :as subscription-handler]
+            [rss-feed-reader.handler.feed-handler :as feed-handler]
             [ring.middleware.params :refer [wrap-params]]
             [ring.middleware.json :refer [wrap-json-response wrap-json-body]]
             [bidi.ring :refer (make-handler)]
@@ -13,7 +14,10 @@
 
 ; ==== APIs
 
-(def routes ["/subscriptions"
+(def routes ["/feed"
+             [["" {:get  #(feed-handler/get-all %)
+                   :post #(feed-handler/post %)}]]
+             "/subscriptions"
              [["" {:get  #(subscription-handler/get-all %)
                    :post #(subscription-handler/post %)}]
               [["/" :id]
