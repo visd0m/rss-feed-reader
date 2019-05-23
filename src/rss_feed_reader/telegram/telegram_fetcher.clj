@@ -37,7 +37,7 @@
               {:query-params {:chat_id (:chat-id message)
                               :text    (:text message)}}))
 
-; commands
+; === commands
 
 (def welcome-message
   "Welcome to visd0m feeder")
@@ -45,10 +45,31 @@
 (def welcome-back-message
   "Welcome back to visd0m feeder")
 
+(def help-message
+  (str "/start\n"
+       "start using visd0m feeder bot\n\n"
+       "/stop\n"
+       "stop using visd0m feeder bot\n\n"
+       "/subscribe <url> <tag>\n"
+       "subscribe to rss feed <url> tagged with <tag> tag\n\n"
+       "/bytag <tag>\n"
+       "retrieve last news by feed identified by tag <tag>\n\n"
+       "/recent\n"
+       "retrieve last news by all yours subscriptions\n\n"
+       "/list\n"
+       "list all your subscriptions"))
+
 (defmulti handle-command
           (fn [command]
             (log/info "handling command=" (get-in command [:message :text]))
             (first (:parsed-command command))))
+
+; === help
+
+(defmethod handle-command "/help" [command]
+  (send-message {:text    help-message
+                 :chat-id (get-in command [:message :chat :id])}))
+
 
 ; ==== start
 
@@ -65,7 +86,7 @@
 
 (defn- start-existing-consumer
   [consumer command]
-  (if-not (:enabled consumer)
+  (when-not (:enabled consumer)
     (do
       (consumer/update-skip-null {:id      (:id consumer)
                                   :version (:version consumer)
@@ -79,9 +100,22 @@
 
     (if consumer
       (start-existing-consumer consumer command)
-      (start-new-consumer chat-id command))
+      (start-new-consumer chat-id command))))
 
-    (log/info "handled command start")))
+; ==== list
+
+(defmethod handle-command "/list" [command]
+  (let [consumer (consumer/by-external-id (get-in command [:message :chat :id]))
+        subscriptions-by-feed-id (apply array-map (->> (subscription/by-consumer-id (:id consumer))
+                                                       (filter :enabled)
+                                                       (mapcat (fn [subscription]
+                                                                 [(:feed_id subscription) subscription]))))
+        feeds (feed/batch-by-id (keys subscriptions-by-feed-id))]
+    (doseq [feed feeds]
+      (let [subscription (get subscriptions-by-feed-id (:id feed))]
+        (send-message {:text    (str (:tag subscription) "\n"
+                                     (:url feed))
+                       :chat-id (get-in command [:message :chat :id])})))))
 
 ; ==== stop
 
@@ -92,9 +126,7 @@
                                   :version (:version consumer)
                                   :enabled false})
       (send-message {:text    "Farewell"
-                     :chat-id (get-in command [:message :chat :id])})))
-
-  (log/info "handled command stop"))
+                     :chat-id (get-in command [:message :chat :id])}))))
 
 ; ==== recent
 
@@ -113,11 +145,8 @@
         (send-message {:text    (str (get subscription :tag) "\n\n"
                                      (get-in feed-item [:item "title"]) "\n\n"
                                      (get-in feed-item [:item "author"]) "\n\n"
-                                     (get-in feed-item [:item "published-date"]) "\n\n"
                                      (get-in feed-item [:item "link"]))
-                       :chat-id (get-in command [:message :chat :id])})))
-
-    (log/info "handled command recent")))
+                       :chat-id (get-in command [:message :chat :id])})))))
 
 ; ==== subscribe
 
@@ -147,28 +176,32 @@
                           :consumer-id (:id consumer)})))
 
 (defn on-missing-feed
-  [consumer url tag]
-  (when (and consumer url tag (is-valid-rss-feed url))
+  [consumer url tag chat-id]
+  (if (and consumer url tag (is-valid-rss-feed url))
     (let [feed (feed/insert {:url url})]
       (subscription/insert {:tag         tag
                             :feed-id     (:id feed)
-                            :consumer-id (:id consumer)}))))
+                            :consumer-id (:id consumer)}))
+    (send-message {:text    (str "invalid rss feed url=" url)
+                   :chat-id chat-id})))
 
 (defmethod handle-command "/subscribe" [command]
-  (let [chat-id (get-in command [:message :chat :id])
-        consumer (consumer/by-external-id chat-id)
-        url (nth (:parsed-command command) 1)
-        tag (nth (:parsed-command command) 2)
-        feed (first (feed/by-url url))]
+  (if-not (= (count (:parsed-command command)) 3)
+    (send-message {:text    (str "invalid syntax for 'subscribe' command\n"
+                                 "syntax: /subscribe <url> <tag>")
+                   :chat-id (get-in command [:message :chat :id])})
+    (let [chat-id (get-in command [:message :chat :id])
+          consumer (consumer/by-external-id chat-id)
+          url (nth (:parsed-command command) 1)
+          tag (nth (:parsed-command command) 2)
+          feed (first (feed/by-url url))]
 
-    (when (and consumer url tag)
-      (if feed
-        (on-existing-feed consumer tag feed)
-        (on-missing-feed consumer url tag))))
+      (when (and consumer url tag)
+        (if feed
+          (on-existing-feed consumer tag feed)
+          (on-missing-feed consumer url tag chat-id))))))
 
-  (log/info "handled command subscribe"))
-
-; === by-tag
+; === bytag
 
 (defmethod handle-command "/bytag" [command]
   (if-not (= (count (:parsed-command command)) 2)
@@ -191,9 +224,8 @@
                        :chat-id (get-in command [:message :chat :id])})))))
 
 (defmethod handle-command :default [command]
-  (let [response (send-message {:text    "unhandled command"
-                                :chat-id (get-in command [:message :chat :id])})]
-    (log/info "send-message response=" response)))
+  (send-message {:text    "unhandled command"
+                 :chat-id (get-in command [:message :chat :id])}))
 
 ; ===
 
@@ -229,11 +261,14 @@
                                   (clojure.string/starts-with? (get-in message [:message :text]) "/"))))]
       (log/info "commands received=" commands)
       (doseq [command commands]
-        (handle-command
-          (assoc
-            command
-            :parsed-command
-            (clojure.string/split (get-in command [:message :text]) #" ")))))
+        (try
+          (handle-command
+            (assoc
+              command
+              :parsed-command
+              (clojure.string/split (get-in command [:message :text]) #" ")))
+          (catch Exception error
+            (log/warn "error processing command=" command " , error=" error)))))
 
     (configuration/put-key {:key   last-update-id-configuration-key
                             :value (:update_id (last messages))})))

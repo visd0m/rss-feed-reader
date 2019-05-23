@@ -18,9 +18,9 @@
                           (.setDriverClass (:classname db-config))
                           (.setJdbcUrl (str "jdbc:" (:subprotocol db-config) ":" (:subname db-config)))
                           (.setUser (:user db-config))
-                          (.setMaxPoolSize 1)
-                          (.setMinPoolSize 1)
-                          (.setInitialPoolSize 1))]
+                          (.setMaxPoolSize 10)
+                          (.setMinPoolSize 10)
+                          (.setInitialPoolSize 10))]
     {:datasource connection-pool}))
 
 (def pooled-db (delay (pool db-config)))
