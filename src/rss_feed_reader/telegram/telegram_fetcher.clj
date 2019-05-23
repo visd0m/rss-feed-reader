@@ -137,6 +137,7 @@
                                                        (mapcat (fn [subscription]
                                                                  [(:feed_id subscription) subscription]))))
         feeds (feed/batch-by-id (->> (vals subscriptions-by-feed-id)
+                                     (filter :enabled)
                                      (map :feed_id)))
         feed-items (feed-item/batch-by-feed-id-and-date-after (->> feeds (map :id))
                                                               (Timestamp/from (.minus (Instant/now) 30 (ChronoUnit/MINUTES))))]
