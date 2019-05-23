@@ -212,7 +212,7 @@
     (let [tag (nth (:parsed-command command) 1)
           subscription (first (subscription/by-tag tag))]
       (if (and tag subscription)
-        (let [feed (first (feed/by-id (:feed_id subscription)))
+        (let [feed (feed/by-id (:feed_id subscription))
               feed-items (feed-item/by-feed-id-and-date-after (:id feed) (Timestamp/from (.minus (Instant/now) 30 (ChronoUnit/MINUTES))))]
           (doseq [feed-item feed-items]
             (send-message {:text    (str (get subscription :tag) "\n\n"

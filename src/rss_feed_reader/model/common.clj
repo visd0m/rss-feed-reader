@@ -64,10 +64,12 @@
   [entity table custom-types-by-key]
   (let [entity-keys (->>
                       (keys entity)
+                      (filter #(not= nil (% entity)))
                       (map #(clojure.string/replace (clojure.core/name %) "-" "_"))
                       (clojure.string/join ","))
         values (->>
                  (keys entity)
+                 (filter #(not= nil (% entity)))
                  (map #(if-let [type (% custom-types-by-key)]
                          (str "('" (escape-single-quote (% entity)) "'" "::" type ")")
                          (str "'" (escape-single-quote (% entity)) "'")))

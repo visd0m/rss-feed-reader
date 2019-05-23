@@ -32,15 +32,15 @@
 ; ==== insert
 
 (defn insert
-  "Insert given consumer if valid "
+  "Insert given consumer if valid"
   ([consumer]
    {:pre [(s/valid? ::insert-consumer consumer)]}
    (insert consumer (db/db-connection)))
   ([consumer conn]
    (let [autocompleted-consumer (autocomplete-insert consumer)]
-     (log/info "creating consumer= " autocompleted-consumer)
-     (sql/with-db-transaction [conn (db/db-connection)]
-                              (sql/execute! conn [(to-sql-insert autocompleted-consumer " consumer " {:id " uuid "})])
+     (log/info "creating consumer=" autocompleted-consumer)
+     (sql/with-db-transaction [conn conn]
+                              (sql/execute! conn [(to-sql-insert autocompleted-consumer "consumer" {:id "uuid"})])
                               (by-id (:id autocompleted-consumer) conn)))))
 
 ; ==== update

@@ -25,7 +25,7 @@
    (by-id id (db/db-connection)))
   ([id sql-connection]
    (log/info "getting feed with id=" id)
-   (sql/query sql-connection ["select * from feed where id = (?::uuid)" id])))
+   (first (sql/query sql-connection ["select * from feed where id = (?::uuid)" id]))))
 
 (defn batch-by-id
   "Batch load feeds by ids"
