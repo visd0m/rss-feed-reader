@@ -53,6 +53,16 @@
      (into []
            (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result)))))
 
+(defn by-feed-id-and-date-after
+  "Load feed items by feed ids"
+  ([id date]
+   (by-feed-id-and-date-after id date (db/db-connection)))
+  ([id date sql-connection]
+   (log/info "loading feed items by feed id=" id)
+   (let [result (sql/query sql-connection ["select * from feed_item where feed_id = (?::uuid) and insert_date > (?::timestamp) order by insert_date desc" id date])]
+     (into []
+           (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result)))))
+
 (defn batch-by-feed-id-and-date-after
   "Batch load feed items by feed ids"
   ([ids date]

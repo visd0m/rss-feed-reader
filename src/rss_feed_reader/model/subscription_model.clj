@@ -4,8 +4,7 @@
             [clojure.spec.alpha :as s]
             [clojure.walk]
             [rss-feed-reader.config.db :as db]
-            [rss-feed-reader.model.common :refer :all])
-  (:import (java.util UUID)))
+            [rss-feed-reader.model.common :refer :all]))
 
 
 (s/def ::insert-subscription (s/keys :req-un [::tag ::feed-id ::consumer-id]
@@ -30,6 +29,14 @@
    (log/info "loading subscription by id=" id)
    (first (sql/query conn ["select * from subscription where id = (?::uuid)" id]))))
 
+(defn by-tag
+  "Get subscription by tag"
+  ([tag]
+   (by-tag tag (db/db-connection)))
+  ([tag sql-connection]
+   (log/info "loading subscriptions by tag=" tag)
+   (sql/query sql-connection ["select * from subscription where tag = ?" tag])))
+
 (defn by-url
   "Get subscriptions by url"
   ([url]
@@ -47,13 +54,13 @@
    (into [] (sql/query sql-connection
                        (to-batch-load-query "select * from subscription where feed_id in (?)" ids)))))
 
-(defn by-feed-id
+(defn by-feed-id-and-consumer-id
   "Get subscriptions by feed id"
-  ([feed-id]
-   (by-feed-id feed-id (db/db-connection)))
-  ([feed-id conn]
-   (log/info "loading subscriptions by feed id= " feed-id)
-   (sql/query conn ["select * from subscription where feed_id = (?::uuid) " feed-id])))
+  ([feed-id consumer-id]
+   (by-feed-id-and-consumer-id feed-id consumer-id (db/db-connection)))
+  ([feed-id consumer-id conn]
+   (log/info "loading subscriptions by consumer id= " consumer-id " and feed id= " feed-id)
+   (sql/query conn ["select * from subscription where feed_id = (?::uuid) and consumer_id =(?::uuid)" feed-id consumer-id])))
 
 (defn by-consumer-id
   "Get subscriptions by consumer id"
@@ -73,10 +80,9 @@
   ([subscription conn]
    (let [autocompleted-subscription (autocomplete-insert subscription)]
      (log/info "creating subscription= " autocompleted-subscription)
-     (sql/with-db-transaction [conn (db/db-connection)]
-                              (sql/execute! conn [(to-sql-insert autocompleted-subscription " subscription " {:id " uuid "})])
+     (sql/with-db-transaction [conn conn]
+                              (sql/execute! conn [(to-sql-insert autocompleted-subscription "subscription" {:id "uuid"})])
                               (by-id (:id autocompleted-subscription) conn)))))
-
 
 ; ==== update
 
@@ -88,6 +94,6 @@
   ([subscription conn]
    (let [autocompleted-subscription (autocomplete-update subscription)]
      (log/info "updating subscription= " autocompleted-subscription)
-     (sql/with-db-transaction [conn (db/db-connection)]
-                              (sql/execute! conn [(to-sql-update-skip-null autocompleted-subscription " subscription " {:id " uuid "} :id)])
+     (sql/with-db-transaction [conn conn]
+                              (sql/execute! conn [(to-sql-update-skip-null autocompleted-subscription "subscription" {:id "uuid"} :id)])
                               (by-id (:id autocompleted-subscription) conn)))))

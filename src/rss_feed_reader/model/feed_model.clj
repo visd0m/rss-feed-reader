@@ -52,6 +52,7 @@
    (insert feed (db/db-connection)))
   ([feed sql-connection]
    (let [entity-to-insert (autocomplete-insert feed)]
+     (log/info "creating feed= " entity-to-insert)
      (sql/with-db-transaction [sql-connection sql-connection]
                               (sql/execute! sql-connection [(to-sql-insert entity-to-insert "feed" {:id "uuid"})])
                               (by-id (:id entity-to-insert) sql-connection)))))

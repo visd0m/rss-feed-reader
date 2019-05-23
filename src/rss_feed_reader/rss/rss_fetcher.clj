@@ -14,23 +14,29 @@
   [feed-url]
   (log/info "fetching feed=" feed-url)
 
+  (let [xml-reader (-> feed-url
+                       (URL.)
+                       (XmlReader.))
+        feed-items (-> (SyndFeedInput.)
+                       (.build xml-reader)
+                       (bean)
+                       (:entries))]
+
+    (for [^SyndEntry feed-item feed-items]
+      {:title          (.getTitle feed-item)
+       :author         (.getAuthor feed-item)
+       :link           (.getLink feed-item)
+       :published-date (.getPublishedDate feed-item)})))
+
+(defn fetch-feed-or-disable
+  [feed]
   (try
-    (let [xml-reader (-> feed-url
-                         (URL.)
-                         (XmlReader.))
-          feed-items (-> (SyndFeedInput.)
-                         (.build xml-reader)
-                         (bean)
-                         (:entries))]
-
-      (for [^SyndEntry feed-item feed-items]
-        {:title          (.getTitle feed-item)
-         :author         (.getAuthor feed-item)
-         :link           (.getLink feed-item)
-         :published-date (.getPublishedDate feed-item)}))
-
+    (fetch-feed (:url feed))
     (catch Exception e
-      (log/error "an error occurred fetching feed=" feed-url ", error=" e))))
+      (log/error "an error occurred fetching feed=" (:url feed) ", error=" e)
+      (feed/update-skip-null {:id      (:id feed)
+                              :version (:version feed)
+                              :enabled false}))))
 
 (defn get-feed-item-hash
   [feed-item]
@@ -43,7 +49,7 @@
   []
   (let [feeds (feed/all-enabled)]
     (doseq [feed feeds
-            feed-item (fetch-feed (:url feed))]
+            feed-item (fetch-feed-or-disable feed)]
       (let [hash (get-feed-item-hash feed-item)]
         (when (empty? (feed-item/by-hash hash))
           (feed-item/insert {:feed-id (:id feed)

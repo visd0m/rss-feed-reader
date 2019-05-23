@@ -6,12 +6,13 @@
             [rss-feed-reader.model.subscription-model :as subscription]
             [rss-feed-reader.model.feed-model :as feed]
             [rss-feed-reader.model.feed-item-model :as feed-item]
+            [rss-feed-reader.rss.rss-fetcher :as rss]
             [clojure.tools.logging :as log])
   (:import (java.sql Timestamp)
            (java.time Instant)
            (java.time.temporal ChronoUnit)))
 
-; telegram apis
+; ==== telegram apis
 
 (def bot-token
   (slurp "resources/token.txt"))
@@ -36,8 +37,7 @@
               {:query-params {:chat_id (:chat-id message)
                               :text    (:text message)}}))
 
-
-; bot command handling
+; commands
 
 (def welcome-message
   "Welcome to visd0m feeder")
@@ -45,13 +45,12 @@
 (def welcome-back-message
   "Welcome back to visd0m feeder")
 
-(def last-update-id-configuration-key
-  "last-update-id")
-
 (defmulti handle-command
           (fn [command]
             (log/info "handling command=" (get-in command [:message :text]))
             (first (:parsed-command command))))
+
+; ==== start
 
 (defn- start-new-consumer
   [chat-id command]
@@ -84,6 +83,8 @@
 
     (log/info "handled command start")))
 
+; ==== stop
+
 (defmethod handle-command "/stop" [command]
   (if-let [consumer (consumer/by-external-id (get-in command [:message :chat :id]))]
     (do
@@ -95,33 +96,109 @@
 
   (log/info "handled command stop"))
 
+; ==== recent
+
 (defmethod handle-command "/recent" [command]
   (let [consumer (consumer/by-external-id (get-in command [:message :chat :id]))
-        subscriptions (subscription/by-consumer-id (:id consumer))
-        feeds (feed/batch-by-id (->> subscriptions
+        subscriptions-by-feed-id (apply array-map (->> (subscription/by-consumer-id (:id consumer))
+                                                       (filter :enabled)
+                                                       (mapcat (fn [subscription]
+                                                                 [(:feed_id subscription) subscription]))))
+        feeds (feed/batch-by-id (->> (vals subscriptions-by-feed-id)
                                      (map :feed_id)))
         feed-items (feed-item/batch-by-feed-id-and-date-after (->> feeds (map :id))
-                                                              (Timestamp/from (.minus (Instant/now) 5 (ChronoUnit/MINUTES))))]
+                                                              (Timestamp/from (.minus (Instant/now) 30 (ChronoUnit/MINUTES))))]
     (doseq [feed-item feed-items]
-      (send-message {:text    (str "title: " (get-in feed-item [:item "title"]) "\n"
-                                   "author: " (get-in feed-item [:item "author"]) "\n"
-                                   "date: " (get-in feed-item [:item "published-date"]) "\n\n"
-                                   "link: " (get-in feed-item [:item "link"]))
+      (let [subscription (get subscriptions-by-feed-id (:feed_id feed-item))]
+        (send-message {:text    (str (get subscription :tag) "\n\n"
+                                     (get-in feed-item [:item "title"]) "\n\n"
+                                     (get-in feed-item [:item "author"]) "\n\n"
+                                     (get-in feed-item [:item "published-date"]) "\n\n"
+                                     (get-in feed-item [:item "link"]))
+                       :chat-id (get-in command [:message :chat :id])})))
 
-                     :chat-id (get-in command [:message :chat :id])}))))
+    (log/info "handled command recent")))
 
-; todo
-(defmethod handle-command "/by-tag" [command]
-  (let [response (send-message {:text    "BY-TAG"
-                                :chat-id (get-in command [:message :chat :id])})]
-    (log/info "send-message response=" response)))
+; ==== subscribe
+
+(defn is-valid-rss-feed
+  [url]
+  (try
+    (rss/fetch-feed url)
+    true
+    (catch Exception _
+      false)))
+
+(defn on-existing-feed
+  [consumer tag feed]
+  ; enable again feed if it was disabled
+  (when-not (:enabled feed)
+    (feed/update-skip-null {:id      (:id feed)
+                            :version (:version feed)
+                            :enabled true}))
+  (if-let [subscription (first (subscription/by-feed-id-and-consumer-id (:id feed) (:id consumer)))]
+    ; on existing subscription re-enable it if disabled
+    (when-not (:enabled subscription)
+      (subscription/update-skip-null {:id      (:id subscription)
+                                      :version (:version subscription)
+                                      :enabled true}))
+    (subscription/insert {:tag         tag
+                          :feed-id     (:id feed)
+                          :consumer-id (:id consumer)})))
+
+(defn on-missing-feed
+  [consumer url tag]
+  (when (and consumer url tag (is-valid-rss-feed url))
+    (let [feed (feed/insert {:url url})]
+      (subscription/insert {:tag         tag
+                            :feed-id     (:id feed)
+                            :consumer-id (:id consumer)}))))
+
+(defmethod handle-command "/subscribe" [command]
+  (let [chat-id (get-in command [:message :chat :id])
+        consumer (consumer/by-external-id chat-id)
+        url (nth (:parsed-command command) 1)
+        tag (nth (:parsed-command command) 2)
+        feed (first (feed/by-url url))]
+
+    (when (and consumer url tag)
+      (if feed
+        (on-existing-feed consumer tag feed)
+        (on-missing-feed consumer url tag))))
+
+  (log/info "handled command subscribe"))
+
+; === by-tag
+
+(defmethod handle-command "/bytag" [command]
+  (if-not (= (count (:parsed-command command)) 2)
+    (send-message {:text    (str "invalid syntax for 'bytag' command\n"
+                                 "syntax: /bytag <tag>")
+                   :chat-id (get-in command [:message :chat :id])})
+    (let [tag (nth (:parsed-command command) 1)
+          subscription (first (subscription/by-tag tag))]
+      (if (and tag subscription)
+        (let [feed (first (feed/by-id (:feed_id subscription)))
+              feed-items (feed-item/by-feed-id-and-date-after (:id feed) (Timestamp/from (.minus (Instant/now) 30 (ChronoUnit/MINUTES))))]
+          (doseq [feed-item feed-items]
+            (send-message {:text    (str (get subscription :tag) "\n\n"
+                                         (get-in feed-item [:item "title"]) "\n\n"
+                                         (get-in feed-item [:item "author"]) "\n\n"
+                                         (get-in feed-item [:item "published-date"]) "\n\n"
+                                         (get-in feed-item [:item "link"]))
+                           :chat-id (get-in command [:message :chat :id])})))
+        (send-message {:text    (str "no subscription found for tag=" tag)
+                       :chat-id (get-in command [:message :chat :id])})))))
 
 (defmethod handle-command :default [command]
   (let [response (send-message {:text    "unhandled command"
                                 :chat-id (get-in command [:message :chat :id])})]
     (log/info "send-message response=" response)))
 
-; job
+; ===
+
+(def last-update-id-configuration-key
+  "last-update-id")
 
 (defn fetch-commands
   []
