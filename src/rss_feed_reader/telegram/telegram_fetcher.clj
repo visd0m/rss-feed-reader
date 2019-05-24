@@ -7,6 +7,7 @@
             [rss-feed-reader.model.feed-model :as feed]
             [rss-feed-reader.model.feed-item-model :as feed-item]
             [rss-feed-reader.rss.rss-fetcher :as rss]
+            [clojure.core.async :refer [go]]
             [clojure.tools.logging :as log])
   (:import (java.sql Timestamp)
            (java.time Instant)
@@ -140,7 +141,7 @@
                                      (filter :enabled)
                                      (map :feed_id)))
         feed-items (feed-item/batch-by-feed-id-and-date-after (->> feeds (map :id))
-                                                              (Timestamp/from (.minus (Instant/now) 30 (ChronoUnit/MINUTES))))]
+                                                              (Timestamp/from (.minus (Instant/now) 1 (ChronoUnit/HOURS))))]
     (doseq [feed-item feed-items]
       (let [subscription (get subscriptions-by-feed-id (:feed_id feed-item))]
         (send-message {:text    (str (get subscription :tag) "\n\n"
@@ -213,7 +214,7 @@
           subscription (first (subscription/by-tag tag))]
       (if (and tag subscription)
         (let [feed (feed/by-id (:feed_id subscription))
-              feed-items (feed-item/by-feed-id-and-date-after (:id feed) (Timestamp/from (.minus (Instant/now) 30 (ChronoUnit/MINUTES))))]
+              feed-items (feed-item/by-feed-id-and-date-after (:id feed) (Timestamp/from (.minus (Instant/now) 1 (ChronoUnit/HOURS))))]
           (doseq [feed-item feed-items]
             (send-message {:text    (str (get subscription :tag) "\n\n"
                                          (get-in feed-item [:item "title"]) "\n\n"
@@ -232,6 +233,11 @@
 
 (def last-update-id-configuration-key
   "last-update-id")
+
+(defn handle-command-async
+  [command]
+  (go
+    (handle-command (assoc command :parsed-command (clojure.string/split (get-in command [:message :text]) #" ")))))
 
 (defn fetch-commands
   []
@@ -261,15 +267,12 @@
                                   (log/info message)
                                   (clojure.string/starts-with? (get-in message [:message :text]) "/"))))]
       (log/info "commands received=" commands)
+
+      (configuration/put-key {:key   last-update-id-configuration-key
+                              :value (:update_id (last messages))})
+
       (doseq [command commands]
         (try
-          (handle-command
-            (assoc
-              command
-              :parsed-command
-              (clojure.string/split (get-in command [:message :text]) #" ")))
+          (handle-command-async command)
           (catch Exception error
-            (log/warn "error processing command=" command " , error=" error)))))
-
-    (configuration/put-key {:key   last-update-id-configuration-key
-                            :value (:update_id (last messages))})))
+            (log/warn "error processing command=" command " , error=" error)))))))

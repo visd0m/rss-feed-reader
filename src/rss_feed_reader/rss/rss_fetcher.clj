@@ -7,6 +7,7 @@
            (com.rometools.rome.feed.synd SyndEntry))
   (:require [clojure.tools.logging :as log]
             [cheshire.core :refer :all]
+            [clojure.core.async :refer [go]]
             [rss-feed-reader.model.feed-item-model :as feed-item]
             [rss-feed-reader.model.feed-model :as feed]))
 

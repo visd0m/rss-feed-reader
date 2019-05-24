@@ -16,7 +16,7 @@
 (defn all-enabled
   "Get list of all enabled feeds"
   []
-  (log/info "getting all feeds")
+  (log/info "Getting all feeds")
   (sql/query (db/db-connection) ["select * from feed where enabled = true order by insert_date desc"]))
 
 (defn by-id

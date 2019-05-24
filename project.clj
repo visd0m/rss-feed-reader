@@ -24,6 +24,7 @@
                  [migratus "1.2.0"]
                  [clojurewerkz/quartzite "2.1.0"]
                  [clj-http "3.10.0"]
-                 [cheshire "5.8.1"]]
+                 [cheshire "5.8.1"]
+                 [org.clojure/core.async "0.4.490"]]
   :aot [rss-feed-reader.app]
   :main rss-feed-reader.app)
