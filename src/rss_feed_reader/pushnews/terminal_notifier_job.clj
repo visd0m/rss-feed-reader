@@ -1,4 +1,4 @@
-(ns rss-feed-reader.pushnews.push-news
+(ns rss-feed-reader.pushnews.terminal-notifier-job
   (:require [rss-feed-reader.model.feed-item-model :as feed_items]
             [rss-feed-reader.model.subscription-model :as subscriptions]
             [clojure.java.shell :as shell]

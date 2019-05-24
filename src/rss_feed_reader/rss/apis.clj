@@ -1,4 +1,4 @@
-(ns rss-feed-reader.rss.rss-fetcher
+(ns rss-feed-reader.rss.apis
   (:import (com.rometools.rome.io SyndFeedInput XmlReader)
            (java.net URL)
            (java.security MessageDigest)
@@ -8,7 +8,6 @@
   (:require [clojure.tools.logging :as log]
             [cheshire.core :refer :all]
             [clojure.core.async :refer [go]]
-            [rss-feed-reader.model.feed-item-model :as feed-item]
             [rss-feed-reader.model.feed-model :as feed]))
 
 (defn fetch-feed
@@ -45,15 +44,3 @@
         hash (-> (MessageDigest/getInstance "MD5")
                  (.digest bytes))]
     (String. (.encode (Base64/getEncoder) hash) "UTF-8")))
-
-(defn fetch-all-feeds
-  []
-  (let [feeds (feed/all-enabled)]
-    (doseq [feed feeds
-            feed-item (fetch-feed-or-disable feed)]
-      (let [hash (get-feed-item-hash feed-item)]
-        (when (empty? (feed-item/by-hash hash))
-          (feed-item/insert {:feed-id (:id feed)
-                             :item    (generate-string feed-item)
-                             :hash    hash}))))))
-

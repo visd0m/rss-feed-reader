@@ -29,6 +29,14 @@
    (log/info "loading consumer by id=" id)
    (first (sql/query conn ["select * from consumer where external_id = (?::text)" id]))))
 
+(defn by-external-id-enabled
+  "Get consumer by id"
+  ([id]
+   (by-external-id-enabled id (db/db-connection)))
+  ([id conn]
+   (log/info "loading consumer by id=" id)
+   (first (sql/query conn ["select * from consumer where external_id = (?::text) and enabled = true" id]))))
+
 ; ==== insert
 
 (defn insert

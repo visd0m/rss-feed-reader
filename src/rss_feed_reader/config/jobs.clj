@@ -3,9 +3,9 @@
             [clojurewerkz.quartzite.jobs :refer :all :as j]
             [clojurewerkz.quartzite.jobs :refer [defjob]]
             [clojurewerkz.quartzite.triggers :as t]
-            [rss-feed-reader.rss.rss-fetcher :refer :all :as rss-fetcher]
-            [rss-feed-reader.telegram.telegram-fetcher :refer :all :as telegram]
-            [rss-feed-reader.pushnews.push-news :refer :all :as push-news]
+            [rss-feed-reader.jobs.rss-fetching-job :refer :all :as rss-fetcher]
+            [rss-feed-reader.jobs.telegram-polling-job :refer :all :as telegram-polling]
+            [rss-feed-reader.pushnews.terminal-notifier-job :refer :all :as push-news]
             [clojurewerkz.quartzite.schedule.cron :refer [schedule cron-schedule]]))
 
 (def jobs [{:job     (j/build
@@ -31,7 +31,7 @@
            {:job     (j/build
                        (j/of-type (defjob fetch-telegram-commands
                                     [_]
-                                    (telegram/fetch-commands)))
+                                    (telegram-polling/fetch-commands)))
                        (j/with-identity (j/key "jobs.job.3")))
             :trigger (t/build
                        (t/with-identity (t/key "triggers.3"))
@@ -45,4 +45,3 @@
   (let [scheduler (qs/start (qs/initialize))]
     (doseq [job jobs]
       (qs/schedule scheduler (:job job) (:trigger job)))))
-
