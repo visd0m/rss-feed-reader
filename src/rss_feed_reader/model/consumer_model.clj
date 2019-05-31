@@ -13,6 +13,14 @@
 
 ; ==== load
 
+(defn all-enabled
+  "Load all enabled consumers"
+  ([]
+   (all-enabled (db/db-connection)))
+  ([sql-connection]
+   (log/info "loading all enabled consumers")
+   (into [] (sql/query sql-connection ["select * from consumer where enabled = true"]))))
+
 (defn by-id
   "Get consumer by id"
   ([id]

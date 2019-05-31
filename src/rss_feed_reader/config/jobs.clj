@@ -3,9 +3,9 @@
             [clojurewerkz.quartzite.jobs :refer :all :as j]
             [clojurewerkz.quartzite.jobs :refer [defjob]]
             [clojurewerkz.quartzite.triggers :as t]
-            [rss-feed-reader.jobs.rss-fetching-job :refer :all :as rss-fetcher]
-            [rss-feed-reader.jobs.telegram-polling-job :refer :all :as telegram-polling]
-            [rss-feed-reader.pushnews.terminal-notifier-job :refer :all :as push-news]
+            [rss-feed-reader.jobs.rss-fetching-job :as rss-fetcher]
+            [rss-feed-reader.jobs.telegram-polling-job :as telegram-polling]
+            [rss-feed-reader.jobs.telegram-push-job :as telegram-push]
             [clojurewerkz.quartzite.schedule.cron :refer [schedule cron-schedule]]))
 
 (def jobs [{:job     (j/build
@@ -18,16 +18,16 @@
                        (t/start-now)
                        (t/with-schedule (schedule
                                           (cron-schedule "0 */1 * * * ?"))))}
-           ;{:job     (j/build
-           ;            (j/of-type (defjob push-news-terminal-notifier
-           ;                         [_]
-           ;                         (push-news/push-news)))
-           ;            (j/with-identity (j/key "jobs.job.2")))
-           ; :trigger (t/build
-           ;            (t/with-identity (t/key "triggers.2"))
-           ;            (t/start-now)
-           ;            (t/with-schedule (schedule
-           ;                               (cron-schedule "0 */1 * * * ?"))))}
+           {:job     (j/build
+                       (j/of-type (defjob push-news-telegram
+                                    [_]
+                                    (telegram-push/push-news)))
+                       (j/with-identity (j/key "jobs.job.2")))
+            :trigger (t/build
+                       (t/with-identity (t/key "triggers.2"))
+                       (t/start-now)
+                       (t/with-schedule (schedule
+                                          (cron-schedule "*/30 * * * * ?"))))}
            {:job     (j/build
                        (j/of-type (defjob fetch-telegram-commands
                                     [_]
