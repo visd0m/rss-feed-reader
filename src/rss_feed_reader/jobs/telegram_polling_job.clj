@@ -42,6 +42,7 @@
     ;           :text "fewef"}}
 
     (let [commands (->> messages
+                        (filter #(get-in % [:message :text]))
                         (filter (fn [message]
                                   (log/info message)
                                   (clojure.string/starts-with? (get-in message [:message :text]) "/"))))]

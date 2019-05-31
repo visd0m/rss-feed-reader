@@ -30,7 +30,7 @@
        "/recent\n"
        "retrieve last news by all yours subscriptions\n\n"
        "/list\n"
-       "list all your subscriptions"))
+       "list all your subscriptions\n\n"))
 
 (defmulti handle-command
           (fn [command]
@@ -83,14 +83,14 @@
         subscriptions-by-feed-id (apply array-map (->> (subscription/by-consumer-id (:id consumer))
                                                        (filter :enabled)
                                                        (mapcat (fn [subscription]
-                                                                 [(:feed_id subscription) subscription]))))
-        feeds (feed/batch-by-id (keys subscriptions-by-feed-id))]
+                                                                 [(:feed_id subscription) subscription]))))]
     (if-not (empty? subscriptions-by-feed-id)
-      (doseq [feed feeds]
-        (let [subscription (get subscriptions-by-feed-id (:id feed))]
-          (telegram/send-message {:text    (str (:tag subscription) "\n"
-                                                (:url feed))
-                                  :chat-id (get-in command [:message :chat :id])})))
+      (let [feeds (feed/batch-by-id (keys subscriptions-by-feed-id))]
+        (doseq [feed feeds]
+          (let [subscription (get subscriptions-by-feed-id (:id feed))]
+            (telegram/send-message {:text    (str (:tag subscription) "\n"
+                                                  (:url feed))
+                                    :chat-id (get-in command [:message :chat :id])}))))
       (telegram/send-message {:text    "Wow such emptiness"
                               :chat-id (get-in command [:message :chat :id])}))))
 
@@ -145,29 +145,38 @@
       false)))
 
 (defn- on-existing-feed
-  [consumer tag feed]
+  [consumer tag feed chat-id]
   ; enable again feed if it was disabled
   (when-not (:enabled feed)
     (feed/update-skip-null {:id      (:id feed)
                             :version (:version feed)
                             :enabled true}))
   (if-let [subscription (first (subscription/by-feed-id-and-consumer-id (:id feed) (:id consumer)))]
-    ; on existing subscription re-enable it if disabled
-    (when-not (:enabled subscription)
-      (subscription/update-skip-null {:id      (:id subscription)
-                                      :version (:version subscription)
-                                      :enabled true}))
+    ; on existing subscription re-enable and re-tag it
+    (subscription/update-skip-null {:id      (:id subscription)
+                                    :version (:version subscription)
+                                    :tag     tag
+                                    :enabled true})
     (subscription/insert {:tag         tag
                           :feed-id     (:id feed)
-                          :consumer-id (:id consumer)})))
+                          :consumer-id (:id consumer)
+                          :enabled     true}))
+
+  (telegram/send-message {:text    (str "subscribed to= " (:url feed)
+                                        " as= " tag)
+                          :chat-id chat-id}))
 
 (defn- on-missing-feed
   [consumer url tag chat-id]
   (if (and consumer url tag (is-valid-rss-feed url))
     (let [feed (feed/insert {:url url})]
-      (subscription/insert {:tag         tag
-                            :feed-id     (:id feed)
-                            :consumer-id (:id consumer)}))
+      (do
+        (subscription/insert {:tag         tag
+                              :feed-id     (:id feed)
+                              :consumer-id (:id consumer)})
+        (telegram/send-message {:text    (str "subscribed to= " url
+                                              " as= " tag)
+                                :chat-id chat-id})))
     (telegram/send-message {:text    (str "invalid rss feed url=" url)
                             :chat-id chat-id})))
 
@@ -184,8 +193,28 @@
 
       (when (and consumer url tag)
         (if feed
-          (on-existing-feed consumer tag feed)
+          (on-existing-feed consumer tag feed chat-id)
           (on-missing-feed consumer url tag chat-id))))))
+
+; === disable
+
+(defmethod handle-command "/disable" [command]
+  (let [chat-id (get-in command [:message :chat :id])]
+    (if-not (= (count (:parsed-command command)) 2)
+      (telegram/send-message {:text    (str "invalid syntax for 'disable' command\n"
+                                            "syntax: /disable <tag>")
+                              :chat-id chat-id})
+      (let [tag (nth (:parsed-command command) 1)
+            subscription (first (subscription/by-tag tag))]
+        (if subscription
+          (do
+            (subscription/update-skip-null {:id      (:id subscription)
+                                            :version (:version subscription)
+                                            :enabled false})
+            (telegram/send-message {:text    (str "you won't receive anymore news about " tag)
+                                    :chat-id chat-id}))
+          (telegram/send-message {:text    (str "no subscription found for tag=" tag)
+                                  :chat-id chat-id}))))))
 
 ; === bytag
 
