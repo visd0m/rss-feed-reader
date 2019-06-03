@@ -30,7 +30,9 @@
        "/recent\n"
        "retrieve last news by all yours subscriptions\n\n"
        "/list\n"
-       "list all your subscriptions\n\n"))
+       "list all your subscriptions\n\n"
+       "/disable <tag>\n"
+       "disable subscription identified by tag <tag>\n"))
 
 (defmulti handle-command
           (fn [command]
