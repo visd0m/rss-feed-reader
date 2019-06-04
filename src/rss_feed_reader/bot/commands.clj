@@ -191,7 +191,7 @@
           consumer (consumer/by-external-id chat-id)
           url (nth (:parsed-command command) 1)
           tag (nth (:parsed-command command) 2)
-          feed (first (feed/by-url url))]
+          feed (feed/by-url url)]
 
       (when (and consumer url tag)
         (if feed

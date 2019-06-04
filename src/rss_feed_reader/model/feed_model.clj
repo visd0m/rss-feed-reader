@@ -41,7 +41,7 @@
    (by-url url (db/db-connection)))
   ([url conn]
    (log/info "loading feed by url=" url)
-   (sql/query conn ["select * from feed where url = ?" url])))
+   (first (sql/query conn ["select * from feed where url = ?" url]))))
 
 ;; === insert
 

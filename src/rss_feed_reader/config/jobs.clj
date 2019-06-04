@@ -31,13 +31,13 @@
            {:job     (j/build
                        (j/of-type (defjob fetch-telegram-commands
                                     [_]
-                                    (telegram-polling/fetch-commands)))
+                                    (telegram-polling/fetch-commands 0)))
                        (j/with-identity (j/key "jobs.job.3")))
             :trigger (t/build
                        (t/with-identity (t/key "triggers.3"))
                        (t/start-now)
                        (t/with-schedule (schedule
-                                          (cron-schedule "*/10 * * * * ?"))))}])
+                                          (cron-schedule "*/4 * * * * ?"))))}])
 
 (defn start-scheduler-with-jobs
   []

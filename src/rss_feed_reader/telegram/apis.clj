@@ -1,9 +1,10 @@
 (ns rss-feed-reader.telegram.apis
   (:require [clj-http.client :as client]
-            [cheshire.core :refer :all]))
+            [cheshire.core :refer :all]
+            [clojure.tools.logging :as log]))
 
 (def bot-token
-  (slurp "/Users/domenicovisconti/Dev/Clojure/rss_feed_reader/resources/token.txt"))
+  (System/getenv "BOT_TOKEN"))
 
 (def base-url
   (str "https://api.telegram.org/bot" bot-token "/"))
@@ -11,15 +12,17 @@
 ; === getUpdates
 
 (defn get-updates
-  [last-update-id]
+  [last-update-id timeout]
   (let [query-params {:allowed_updates "message"
-                      :timeout         8}]
-    (-> (client/get (str base-url "getUpdates")
-                    {:query-params (if last-update-id
-                                     (assoc query-params :offset (+ (Integer/parseInt (:value last-update-id)) 1))
-                                     query-params)})
-        (:body)
-        (parse-string true))))
+                      :timeout         timeout}]
+    (let [result (-> (client/get (str base-url "getUpdates")
+                                 {:query-params (if last-update-id
+                                                  (assoc query-params :offset (+ (Long/parseLong (:value last-update-id)) 1))
+                                                  query-params)})
+                     (:body)
+                     (parse-string true))]
+      (log/info result)
+      result)))
 
 ; === sendMessage
 

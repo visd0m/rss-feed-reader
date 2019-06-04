@@ -37,14 +37,6 @@
    (log/info "loading subscriptions by tag=" tag)
    (sql/query sql-connection ["select * from subscription where tag = ?" tag])))
 
-(defn by-url
-  "Get subscriptions by url"
-  ([url]
-   (by-url url (db/db-connection)))
-  ([url conn]
-   (log/info "loading subscriptions by url=" url)
-   (sql/query conn ["select * from subscription where url = ?" url])))
-
 (defn batch-by-feed-id
   "Batch load subscriptions by feed ids"
   ([ids]

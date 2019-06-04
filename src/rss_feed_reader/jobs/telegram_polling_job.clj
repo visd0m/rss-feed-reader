@@ -19,9 +19,9 @@
       (bot-commands/handle-command parsed-command))))
 
 (defn fetch-commands
-  []
+  [timeout]
   (let [last-update-id-configuration (configuration/get-key last-update-id-configuration-key)
-        messages (:result (telegram-apis/get-updates last-update-id-configuration))]
+        messages (:result (telegram-apis/get-updates last-update-id-configuration timeout))]
 
     ; example of telegram message
     ;
@@ -41,15 +41,16 @@
     ;           :date 1558108817,
     ;           :text "fewef"}}
 
+    (if-not (empty? messages)
+      (configuration/put-key {:key   last-update-id-configuration-key
+                              :value (:update_id (last messages))}))
+
     (let [commands (->> messages
                         (filter #(get-in % [:message :text]))
                         (filter (fn [message]
                                   (log/info message)
                                   (clojure.string/starts-with? (get-in message [:message :text]) "/"))))]
       (log/info "commands received=" commands)
-
-      (configuration/put-key {:key   last-update-id-configuration-key
-                              :value (:update_id (last messages))})
 
       (doseq [command commands]
         (try
