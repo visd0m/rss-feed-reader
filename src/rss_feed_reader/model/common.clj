@@ -108,3 +108,13 @@
   (let [string-ids (->> ids
                         (map #(str "'" %1 "'")))]
     (clojure.string/replace query-string "?" (clojure.string/join "," string-ids))))
+
+; ==
+
+(defn to-kebab-case-keys
+  [entity]
+  (if-not (empty? entity)
+    (into {}
+          (for [[k v] entity]
+            [(keyword (clojure.string/replace (clojure.core/name k) "_" "-")) v]))
+    nil))

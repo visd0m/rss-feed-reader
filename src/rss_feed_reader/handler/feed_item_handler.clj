@@ -13,7 +13,7 @@
   (log/info query-params)
 
   (if-let [subscription (subscription/by-id (:id path-params))]
-    (let [starting-after (get-starting-after query-params #(:order_unique (first (feed-item/by-id %))))
+    (let [starting-after (get-starting-after query-params #(:order_unique (feed-item/by-id %)))
           limit (get-limit query-params)
           search query-params
           items (-> (:id subscription)

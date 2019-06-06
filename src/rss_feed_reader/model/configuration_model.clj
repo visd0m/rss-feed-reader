@@ -17,7 +17,8 @@
   ([key sql-connection]
    (let [result (first (sql/query sql-connection ["select * from configuration where key = ?" key]))]
      (log/info "loaded configuration=" result)
-     result)))
+     (-> result
+         (to-kebab-case-keys)))))
 
 (defn- insert
   ([configuration]
@@ -29,7 +30,8 @@
      (log/info "inserting configuration=" entity-to-insert)
      (sql/with-db-transaction [sql-connection sql-connection]
                               (sql/execute! sql-connection [(to-sql-insert entity-to-insert "configuration" {})])
-                              (get-key (:key configuration) sql-connection)))))
+                              (-> (get-key (:key configuration) sql-connection)
+                                  (to-kebab-case-keys))))))
 
 (defn- update
   ([configuration]
@@ -41,7 +43,8 @@
      (log/info "updating configuration=" entity-to-update)
      (sql/with-db-connection [sql-connection sql-connection]
                              (sql/execute! sql-connection [(to-sql-update-skip-null entity-to-update "configuration" {} :key)])
-                             (get-key (:key configuration) sql-connection)))))
+                             (-> (get-key (:key configuration) sql-connection)
+                                 (to-kebab-case-keys))))))
 
 ; == put key
 
@@ -56,4 +59,5 @@
                               (let [c (assoc configuration :version (:version config))]
                                 (log/info c)
                                 (update c sql-connection))
-                              (insert configuration sql-connection)))))
+                              (-> (insert configuration sql-connection)
+                                  (to-kebab-case-keys))))))

@@ -17,7 +17,8 @@
   "Get list of all enabled feeds"
   []
   (log/info "Getting all feeds")
-  (sql/query (db/db-connection) ["select * from feed where enabled = true order by insert_date desc"]))
+  (->> (into [] (sql/query (db/db-connection) ["select * from feed where enabled = true order by insert_date desc"]))
+       (map to-kebab-case-keys)))
 
 (defn by-id
   "Get feed by id"
@@ -25,7 +26,8 @@
    (by-id id (db/db-connection)))
   ([id sql-connection]
    (log/info "getting feed with id=" id)
-   (first (sql/query sql-connection ["select * from feed where id = (?::uuid)" id]))))
+   (-> (first (sql/query sql-connection ["select * from feed where id = (?::uuid)" id]))
+       (to-kebab-case-keys))))
 
 (defn batch-by-id
   "Batch load feeds by ids"
@@ -33,7 +35,8 @@
    (batch-by-id ids (db/db-connection)))
   ([ids sql-connection]
    (log/info "loading feeds by ids=" ids)
-   (sql/query sql-connection (to-batch-load-query "select * from feed where id in (?)" ids))))
+   (->> (into [] (sql/query sql-connection (to-batch-load-query "select * from feed where id in (?)" ids)))
+        (map to-kebab-case-keys))))
 
 (defn by-url
   "Get feed by url"
@@ -41,7 +44,8 @@
    (by-url url (db/db-connection)))
   ([url conn]
    (log/info "loading feed by url=" url)
-   (first (sql/query conn ["select * from feed where url = ?" url]))))
+   (-> (first (sql/query conn ["select * from feed where url = ?" url]))
+       (to-kebab-case-keys))))
 
 ;; === insert
 

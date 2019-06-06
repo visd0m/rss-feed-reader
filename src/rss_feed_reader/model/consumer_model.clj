@@ -19,7 +19,8 @@
    (all-enabled (db/db-connection)))
   ([sql-connection]
    (log/info "loading all enabled consumers")
-   (into [] (sql/query sql-connection ["select * from consumer where enabled = true"]))))
+   (->> (into [] (sql/query sql-connection ["select * from consumer where enabled = true"]))
+        (map to-kebab-case-keys))))
 
 (defn by-id
   "Get consumer by id"
@@ -27,7 +28,8 @@
    (by-id id (db/db-connection)))
   ([id conn]
    (log/info "loading consumer by id=" id)
-   (first (sql/query conn ["select * from consumer where id = (?::uuid)" id]))))
+   (-> (first (sql/query conn ["select * from consumer where id = (?::uuid)" id]))
+       (to-kebab-case-keys))))
 
 (defn by-external-id
   "Get consumer by id"
@@ -35,7 +37,8 @@
    (by-external-id id (db/db-connection)))
   ([id conn]
    (log/info "loading consumer by id=" id)
-   (first (sql/query conn ["select * from consumer where external_id = (?::text)" id]))))
+   (-> (first (sql/query conn ["select * from consumer where external_id = (?::text)" id]))
+       (to-kebab-case-keys))))
 
 (defn by-external-id-enabled
   "Get consumer by id"
@@ -43,7 +46,8 @@
    (by-external-id-enabled id (db/db-connection)))
   ([id conn]
    (log/info "loading consumer by id=" id)
-   (first (sql/query conn ["select * from consumer where external_id = (?::text) and enabled = true" id]))))
+   (-> (first (sql/query conn ["select * from consumer where external_id = (?::text) and enabled = true" id]))
+       (to-kebab-case-keys))))
 
 ; ==== insert
 
@@ -57,7 +61,8 @@
      (log/info "creating consumer=" autocompleted-consumer)
      (sql/with-db-transaction [conn conn]
                               (sql/execute! conn [(to-sql-insert autocompleted-consumer "consumer" {:id "uuid"})])
-                              (by-id (:id autocompleted-consumer) conn)))))
+                              (-> (by-id (:id autocompleted-consumer) conn)
+                                  (to-kebab-case-keys))))))
 
 ; ==== update
 
@@ -71,4 +76,5 @@
      (log/info "updating consumer= " autocompleted-consumer)
      (sql/with-db-transaction [conn (db/db-connection)]
                               (sql/execute! conn [(to-sql-update-skip-null autocompleted-consumer " consumer " {:id " uuid "} :id)])
-                              (by-id (:id autocompleted-consumer) conn)))))
+                              (-> (by-id (:id autocompleted-consumer) conn)
+                                  (to-kebab-case-keys))))))

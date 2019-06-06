@@ -11,7 +11,7 @@
     (doseq [feed feeds
             feed-item (rss/fetch-feed-or-disable feed)]
       (let [hash (rss/get-feed-item-hash feed-item)]
-        (when (empty? (feed-item/by-hash hash))
+        (when-not (feed-item/by-hash hash)
           (feed-item/insert {:feed-id (:id feed)
                              :item    (generate-string feed-item)
                              :hash    hash}))))))

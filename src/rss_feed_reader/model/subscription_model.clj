@@ -19,7 +19,8 @@
   "Get list of all subscriptions"
   []
   (log/info "getting all subscriptions")
-  (into [] (sql/query (db/db-connection) ["select * from subscription where enabled = true order by insert_date desc"])))
+  (->> (into [] (sql/query (db/db-connection) ["select * from subscription where enabled = true order by insert_date desc"]))
+       (map to-kebab-case-keys)))
 
 (defn by-id
   "Get subscription by id"
@@ -27,7 +28,8 @@
    (by-id id (db/db-connection)))
   ([id conn]
    (log/info "loading subscription by id=" id)
-   (first (sql/query conn ["select * from subscription where id = (?::uuid)" id]))))
+   (-> (first (sql/query conn ["select * from subscription where id = (?::uuid)" id]))
+       (to-kebab-case-keys))))
 
 (defn by-tag
   "Get subscription by tag"
@@ -35,7 +37,8 @@
    (by-tag tag (db/db-connection)))
   ([tag sql-connection]
    (log/info "loading subscriptions by tag=" tag)
-   (sql/query sql-connection ["select * from subscription where tag = ?" tag])))
+   (->> (into [] (sql/query sql-connection ["select * from subscription where tag = ?" tag]))
+        (map to-kebab-case-keys))))
 
 (defn batch-by-feed-id
   "Batch load subscriptions by feed ids"
@@ -43,8 +46,9 @@
    (batch-by-feed-id ids (db/db-connection)))
   ([ids sql-connection]
    (log/info "loading subscription by feed ids=" ids)
-   (into [] (sql/query sql-connection
-                       (to-batch-load-query "select * from subscription where feed_id in (?)" ids)))))
+   (->> (into [] (sql/query sql-connection
+                            (to-batch-load-query "select * from subscription where feed_id in (?)" ids)))
+        (to-kebab-case-keys))))
 
 (defn by-feed-id-and-consumer-id
   "Get subscriptions by feed id"
@@ -52,7 +56,8 @@
    (by-feed-id-and-consumer-id feed-id consumer-id (db/db-connection)))
   ([feed-id consumer-id conn]
    (log/info "loading subscriptions by consumer id= " consumer-id " and feed id= " feed-id)
-   (sql/query conn ["select * from subscription where feed_id = (?::uuid) and consumer_id =(?::uuid)" feed-id consumer-id])))
+   (into [] (sql/query conn ["select * from subscription where feed_id = (?::uuid) and consumer_id =(?::uuid)" feed-id consumer-id])
+         (map to-kebab-case-keys))))
 
 (defn by-consumer-id
   "Get subscriptions by consumer id"
@@ -60,7 +65,8 @@
    (by-consumer-id consumer-id (db/db-connection)))
   ([consumer-id conn]
    (log/info "loading subscriptions by consumer id= " consumer-id)
-   (sql/query conn ["select * from subscription where consumer_id = (?::uuid) " consumer-id])))
+   (into [] (sql/query conn ["select * from subscription where consumer_id = (?::uuid) " consumer-id])
+         (map to-kebab-case-keys))))
 
 ; ==== insert
 

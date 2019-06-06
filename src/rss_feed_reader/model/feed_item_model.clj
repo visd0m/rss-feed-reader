@@ -16,7 +16,8 @@
    (by-id id (db/db-connection)))
   ([id connection]
    (log/info "loading feed item by id=" id)
-   (sql/query connection ["select * from feed_item where id = (?::uuid)" id])))
+   (-> (first (sql/query connection ["select * from feed_item where id = (?::uuid)" id]))
+       (to-kebab-case-keys))))
 
 (defn by-subscription-id
   "load feed items by subscription id paginating over order-unique"
@@ -33,8 +34,9 @@
                     " order by order_unique desc limit " (int limit))
          result (do (println "[SELECT] " query)
                     (sql/query connection [query]))]
-     (into []
-           (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result)))))
+     (->> (into []
+                (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result))
+          (map to-kebab-case-keys)))))
 
 (defn by-hash
   "load feed items by hash"
@@ -42,7 +44,8 @@
    (by-hash hash (db/db-connection)))
   ([hash connection]
    (log/info "loading feed items by hash=" hash)
-   (sql/query connection ["select * from feed_item where hash = ?" hash])))
+   (-> (first (sql/query connection ["select * from feed_item where hash = ?" hash]))
+       (to-kebab-case-keys))))
 
 (defn by-date-after
   ([date]
@@ -60,8 +63,9 @@
   ([id date sql-connection]
    (log/info "loading feed items by feed id=" id)
    (let [result (sql/query sql-connection ["select * from feed_item where feed_id = (?::uuid) and insert_date > (?::timestamp) order by insert_date desc" id date])]
-     (into []
-           (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result)))))
+     (->> (into []
+                (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result))
+          (map to-kebab-case-keys)))))
 
 (defn batch-by-feed-id-and-date-after
   "Batch load feed items by feed ids"
@@ -73,8 +77,9 @@
                            [(str (to-batch-load-query "select * from feed_item where feed_id in (?)" ids)
                                  " and insert_date > (?::timestamp) order by insert_date desc")
                             date])]
-     (into []
-           (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result)))))
+     (->> (into []
+                (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result))
+          (map to-kebab-case-keys)))))
 
 
 ; ==== insert
