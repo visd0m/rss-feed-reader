@@ -49,14 +49,13 @@
 
 (defn- start-new-consumer
   [chat-id command]
-  (do
-    (consumer/insert {:external-id chat-id
-                      :name        (get-in command [:message :from :first_name])
-                      :surname     (get-in command [:message :from :last_name])
-                      :username    (get-in command [:message :from :username])
-                      :enabled     true})
-    (telegram/send-message {:text    welcome-message
-                            :chat-id (get-in command [:message :chat :id])})))
+  (consumer/insert {:external-id chat-id
+                    :name        (get-in command [:message :from :first_name])
+                    :surname     (get-in command [:message :from :last_name])
+                    :username    (get-in command [:message :from :username])
+                    :enabled     true})
+  (telegram/send-message {:text    welcome-message
+                          :chat-id (get-in command [:message :chat :id])}))
 
 (defn- start-existing-consumer
   [consumer command]
@@ -85,7 +84,7 @@
         subscriptions-by-feed-id (apply array-map (->> (subscription/by-consumer-id (:id consumer))
                                                        (filter :enabled)
                                                        (mapcat (fn [subscription]
-                                                                 [(:feed_id subscription) subscription]))))]
+                                                                 [(:feed-id subscription) subscription]))))]
     (if-not (empty? subscriptions-by-feed-id)
       (let [feeds (feed/batch-by-id (keys subscriptions-by-feed-id))]
         (doseq [feed feeds]
@@ -117,15 +116,15 @@
       (let [subscriptions-by-feed-id (apply array-map (->> (subscription/by-consumer-id (:id consumer))
                                                            (filter :enabled)
                                                            (mapcat (fn [subscription]
-                                                                     [(:feed_id subscription) subscription]))))
+                                                                     [(:feed-id subscription) subscription]))))
             feeds (feed/batch-by-id (->> (vals subscriptions-by-feed-id)
                                          (filter :enabled)
-                                         (map :feed_id)))
+                                         (map :feed-id)))
             feed-items (feed-item/batch-by-feed-id-and-date-after (->> feeds (map :id))
                                                                   (Timestamp/from (.minus (Instant/now) 1 (ChronoUnit/HOURS))))]
         (if-not (empty? feed-items)
           (doseq [feed-item feed-items]
-            (let [subscription (get subscriptions-by-feed-id (:feed_id feed-item))]
+            (let [subscription (get subscriptions-by-feed-id (:feed-id feed-item))]
               (telegram/send-message {:text    (str (get subscription :tag) "\n\n"
                                                     (get-in feed-item [:item "title"]) "\n\n"
                                                     (get-in feed-item [:item "author"]) "\n\n"
@@ -228,7 +227,7 @@
     (let [tag (nth (:parsed-command command) 1)
           subscription (first (subscription/by-tag tag))]
       (if (and tag subscription)
-        (let [feed (feed/by-id (:feed_id subscription))
+        (let [feed (feed/by-id (:feed-id subscription))
               feed-items (feed-item/by-feed-id-and-date-after (:id feed) (Timestamp/from (.minus (Instant/now) 1 (ChronoUnit/HOURS))))]
           (if-not (empty? feed-items)
             (doseq [feed-item feed-items]
