@@ -1,4 +1,4 @@
-# Clojure telegram bot rss feed collector/dispenser
+# Clojure telegram bot rss feeds collector/dispenser
 
 **!!disclaimer!! Clojure learning project**
 
