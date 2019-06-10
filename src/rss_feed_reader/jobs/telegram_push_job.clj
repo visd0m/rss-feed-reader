@@ -12,7 +12,7 @@
 (def job-lock-name
   "TELEGRAM_PUSH_LOCKED")
 
-(defn push-news-consumer
+(defn- push-news-consumer
   [consumer]
   (let [subscriptions (->> (subscription/by-consumer-id (:id consumer))
                            (filter :enabled))]
@@ -42,18 +42,15 @@
                                               :version         (:version subscription)
                                               :last-check-date last-check-date}))))))))
 
-(defn perform-operation
+(defn- perform-operation
   []
   (let [consumers (consumer/all-enabled)]
     (doseq [consumer consumers]
-      (try
-        (push-news-consumer consumer)
-        (catch Exception error
-          (log/error "error pushing news to consumer=" consumer " error=" error))))))
+      (push-news-consumer consumer))))
 
 (defn push-news
   []
   (try
     (jobs-common/with-lock perform-operation job-lock-name)
     (catch Exception e
-      (log/error (str "error fetching feeds=" e)))))
+      (log/error (str "error pushing news to telegram=" e)))))
