@@ -11,7 +11,7 @@
                                      :opt-un [::id ::enabled]))
 
 (s/def ::update-skip-null-subscription (s/keys :req-un [::id ::version]
-                                               :opt-un [::feed-id ::enabled ::tag ::consumer-id]))
+                                               :opt-un [::feed-id ::enabled ::tag ::consumer-id ::last-check-date]))
 
 ; ==== load
 
@@ -48,7 +48,7 @@
    (log/info "loading subscription by feed ids=" ids)
    (->> (into [] (sql/query sql-connection
                             (to-batch-load-query "select * from subscription where feed_id in (?)" ids)))
-        (to-kebab-case-keys))))
+        (map to-kebab-case-keys))))
 
 (defn by-feed-id-and-consumer-id
   "Get subscriptions by feed id"
@@ -56,8 +56,8 @@
    (by-feed-id-and-consumer-id feed-id consumer-id (db/db-connection)))
   ([feed-id consumer-id conn]
    (log/info "loading subscriptions by consumer id= " consumer-id " and feed id= " feed-id)
-   (into [] (sql/query conn ["select * from subscription where feed_id = (?::uuid) and consumer_id =(?::uuid)" feed-id consumer-id])
-         (map to-kebab-case-keys))))
+   (->> (into [] (sql/query conn ["select * from subscription where feed_id = (?::uuid) and consumer_id =(?::uuid)" feed-id consumer-id]))
+        (map to-kebab-case-keys))))
 
 (defn by-consumer-id
   "Get subscriptions by consumer id"
@@ -65,8 +65,8 @@
    (by-consumer-id consumer-id (db/db-connection)))
   ([consumer-id conn]
    (log/info "loading subscriptions by consumer id= " consumer-id)
-   (into [] (sql/query conn ["select * from subscription where consumer_id = (?::uuid) " consumer-id])
-         (map to-kebab-case-keys))))
+   (->> (into [] (sql/query conn ["select * from subscription where consumer_id = (?::uuid) " consumer-id]))
+        (map to-kebab-case-keys))))
 
 ; ==== insert
 
