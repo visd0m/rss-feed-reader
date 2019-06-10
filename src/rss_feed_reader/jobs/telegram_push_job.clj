@@ -34,7 +34,10 @@
                                       :chat-id (:external-id consumer)}))
 
             (if-not (empty? feed-items)
-              (let [max-date-in-feed-items (reduce max (->> feed-items (map :insert-date)))]
+              (let [max-date-in-feed-items (reduce (fn [d1 d2] (if (.isAfter (.toInstant d1) (.toInstant d2))
+                                                                 d1
+                                                                 d2))
+                                                   (->> feed-items (map :insert-date)))]
                 (subscription/update-skip-null {:id              (:id subscription)
                                                 :version         (:version subscription)
                                                 :last-check-date max-date-in-feed-items}))
