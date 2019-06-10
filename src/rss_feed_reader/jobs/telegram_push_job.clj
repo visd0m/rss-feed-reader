@@ -23,7 +23,7 @@
                               (Timestamp/from (Instant/now))
                               (:last-check-date subscription))]
 
-        (when (:enabled feed)
+        (when (and feed (:enabled feed))
           (let [feed-items (feed-item/by-feed-id-and-date-after (:id feed) last-check-date)]
 
             (doseq [feed-item feed-items]
