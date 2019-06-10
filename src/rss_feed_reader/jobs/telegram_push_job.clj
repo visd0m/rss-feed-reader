@@ -19,20 +19,28 @@
 
     (doseq [subscription subscriptions]
       (let [feed (feed/by-id (:feed-id subscription))
-            last-check-date (:last-check-date subscription)]
+            last-check-date (if (nil? (:last-check-date subscription))
+                              (Timestamp/from (Instant/now))
+                              (:last-check-date subscription))]
+
         (when (:enabled feed)
-          (let [feed-items (feed-item/by-feed-id-and-date-after (:id feed) (if (nil? last-check-date) (Timestamp/from (Instant/now)) last-check-date))]
+          (let [feed-items (feed-item/by-feed-id-and-date-after (:id feed) last-check-date)]
 
             (doseq [feed-item feed-items]
               (telegram/send-message {:text    (str (get subscription :tag) "\n\n"
                                                     (get-in feed-item [:item "title"]) "\n\n"
                                                     (get-in feed-item [:item "author"]) "\n\n"
                                                     (get-in feed-item [:item "link"]))
-                                      :chat-id (:external-id consumer)})))))
+                                      :chat-id (:external-id consumer)}))
 
-      (subscription/update-skip-null {:id              (:id subscription)
-                                      :version         (:version subscription)
-                                      :last-check-date (Timestamp/from (Instant/now))}))))
+            (if-not (empty? feed-items)
+              (let [max-date-in-feed-items (reduce max (->> feed-items (map :insert-date)))]
+                (subscription/update-skip-null {:id              (:id subscription)
+                                                :version         (:version subscription)
+                                                :last-check-date max-date-in-feed-items}))
+              (subscription/update-skip-null {:id              (:id subscription)
+                                              :version         (:version subscription)
+                                              :last-check-date last-check-date}))))))))
 
 (defn perform-operation
   []
