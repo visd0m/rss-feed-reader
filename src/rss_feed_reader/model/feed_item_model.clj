@@ -19,13 +19,13 @@
    (-> (first (sql/query connection ["select * from feed_item where id = (?::uuid)" id]))
        (to-kebab-case-keys))))
 
-(defn by-subscription-id
-  "load feed items by subscription id paginating over order-unique"
-  ([subscription-id starting-after search limit]
-   (by-subscription-id subscription-id starting-after search limit (db/db-connection)))
-  ([subscription-id starting-after search limit connection]
-   (log/info "loading feed items by subscription id=" subscription-id " starting after=" starting-after " limit=" limit)
-   (let [query (str "select * from feed_item where subscription_id = ('" subscription-id "'::uuid)"
+(defn by-feed-id
+  "load feed items by feed id paginating over order-unique"
+  ([feed-id starting-after search limit]
+   (by-feed-id feed-id starting-after search limit (db/db-connection)))
+  ([feed-id starting-after search limit connection]
+   (log/info "loading feed items by feed id=" feed-id " starting after=" starting-after " limit=" limit)
+   (let [query (str "select * from feed_item where feed_id = ('" feed-id "'::uuid)"
                     (reduce (fn [acc entry]
                               (str acc " and item->>'" (key entry) "' ilike '%" (escape-single-quote (val entry)) "%'"))
                             ""

@@ -33,3 +33,14 @@
         (feed/insert)
         (res/response))
     (res/bad-request (str "url=" (:url feed) " already present"))))
+
+; === DELETE
+
+(defn delete
+  [{:keys [params]}]
+  (log/info params)
+  (if-let [feed (feed/by-id (:id params))]
+    (res/response (feed/update-skip-null {:id      (:id feed)
+                                          :version (:version feed)
+                                          :enabled false}))
+    (res/not-found "not found")))
