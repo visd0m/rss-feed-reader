@@ -117,13 +117,11 @@
                                                            (filter :enabled)
                                                            (mapcat (fn [subscription]
                                                                      [(:feed-id subscription) subscription]))))
-            feeds (feed/batch-by-id (->> (vals subscriptions-by-feed-id)
-                                         (filter :enabled)
-                                         (map :feed-id)))
+            feeds (feed/batch-by-id (keys subscriptions-by-feed-id))
             feed-items (feed-item/batch-by-feed-id-and-date-after (->> feeds (map :id))
                                                                   (Timestamp/from (.minus (Instant/now) 1 (ChronoUnit/HOURS))))]
         (if-not (empty? feed-items)
-          (doseq [feed-item feed-items]
+          (doseq [feed-item (take 200 feed-items)]
             (let [subscription (get subscriptions-by-feed-id (:feed-id feed-item))]
               (telegram/send-message {:text    (str (get subscription :tag) "\n\n"
                                                     (get-in feed-item [:item "title"]) "\n\n"

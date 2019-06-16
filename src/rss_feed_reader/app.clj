@@ -40,7 +40,6 @@
                 [["/" :id] [["" {:get    #(consumer-handler/get %)
                                  :delete #(consumer-handler/delete %)}]]]]]
 
-
               [true #(res/not-found (str "not found " %))]]])
 
 ; ====
