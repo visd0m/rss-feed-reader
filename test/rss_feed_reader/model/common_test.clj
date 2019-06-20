@@ -76,8 +76,40 @@
       (for [[key value] entity]
         (is (= (get entity-with-update-date key) value))))))
 
-; todo test auto-complete version
-; todo test auto-complete order unique
+; ===
+
+(deftest should-autocomplete-setting-version-to-0
+  (testing "should autocomplete setting version to 0"
+    (let [entity (dissoc (get-complete-entity) :version)
+          entity-with-version (model-common/set-or-increment-version entity)]
+      (is (contains? entity-with-version :version))
+      (is (= (:version entity-with-version) 0))
+      (is (= (.getClass (:version entity-with-version)) Long)))))
+
+(deftest should-autocomplete-incrementing-version
+  (testing "should autocomplete incrementing version"
+    (let [entity (get-complete-entity)
+          entity-with-version (model-common/set-or-increment-version entity)]
+      (is (contains? entity-with-version :version))
+      (is (= (:version entity-with-version) (+ (:version entity) 1)))
+      (is (= (.getClass (:version entity-with-version)) Long)))))
+
+; ===
+
+(deftest should-autocomplete-with-order-unique
+  (testing "should autocomplete with order unique if missing"
+    (let [entity (dissoc (get-complete-entity) :order-unique)
+          entity-with-order-unique (model-common/auto-complete-order-unique entity)]
+      (is (contains? entity-with-order-unique :order-unique))
+      (is (= (.getClass (:order-unique entity-with-order-unique)) Long)))))
+
+(deftest should-not-autocomplete-with-order-unique
+  (testing "should not autocomplete with order unique if missing"
+    (let [entity (get-complete-entity)
+          entity-with-order-unique (model-common/auto-complete-order-unique entity)]
+      (is (contains? entity-with-order-unique :order-unique))
+      (is (= (.getClass (:order-unique entity)) Long))
+      (is (= (:order-unique entity) (:order-unique entity-with-order-unique))))))
 
 ; ===
 
