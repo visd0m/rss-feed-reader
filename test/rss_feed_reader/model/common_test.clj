@@ -131,3 +131,6 @@
         sql-update-skip-null (model-common/to-sql-update-skip-null entity table custom-types-by-key key)
         expected (str "update the_table set insert_date='" (:insert-date entity) "',update_date='" (:update-date entity) "',order_unique='" (:order-unique entity) "',version='" (:version entity) "' where id=('" (get entity key) "'::uuid) and version=" (- (:version entity) 1))]
     (is (= sql-update-skip-null expected))))
+
+; todo test to-batch-load-query
+; todo test to-kebab-case-keys

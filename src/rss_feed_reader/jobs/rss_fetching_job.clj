@@ -14,7 +14,7 @@
   []
   (let [feeds (feed/all-enabled)]
     (doseq [feed feeds
-            feed-item (rss/fetch-feed (:url feed))]
+            feed-item (rss/safe-fetch-feed (:url feed))]
       (let [hash (rss/get-feed-item-hash feed-item)]
         (when-not (feed-item/by-hash hash)
           (feed-item/insert {:feed-id (:id feed)

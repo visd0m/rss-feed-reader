@@ -28,6 +28,13 @@
        :link           (.getLink feed-item)
        :published-date (.getPublishedDate feed-item)})))
 
+(defn safe-fetch-feed
+  [feed-url]
+  (try
+    (fetch-feed feed-url)
+    (catch Exception e
+      (log/error (str "error fetching feed url=" feed-url " error=" e)))))
+
 (defn fetch-feed-or-disable
   [feed]
   (try
