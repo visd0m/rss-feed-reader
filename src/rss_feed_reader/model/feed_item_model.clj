@@ -97,3 +97,14 @@
                                                                                                       :subscription-id "uuid"
                                                                                                       :item            "json"})])
                               (by-id (:id autocompleted-feed-item) conn)))))
+
+
+; ==== delete
+
+(defn delete-older-than
+  ([date]
+   (delete-older-than date (db/db-connection)))
+  ([date conn]
+   (sql/with-db-transaction [conn (db/db-connection)]
+                            (sql/execute! conn ["delete from feed_item where insert_date < ?" date]))))
+
