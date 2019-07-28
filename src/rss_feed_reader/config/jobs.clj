@@ -38,17 +38,7 @@
                        (t/with-identity (t/key "triggers.3"))
                        (t/start-now)
                        (t/with-schedule (schedule
-                                          (cron-schedule "*/4 * * * * ?"))))}
-           {:job     (j/build
-                       (j/of-type (defjob remove-old-feed-items
-                                    [_]
-                                    (old-feed-item-eraser/delete-old-feed-items)))
-                       (j/with-identity (j/key "jobs.job.4")))
-            :trigger (t/build
-                       (t/with-identity (t/key "triggers.4"))
-                       (t/start-now)
-                       (t/with-schedule (schedule
-                                          (cron-schedule "0 0 0 * * ?"))))}])
+                                          (cron-schedule "*/4 * * * * ?"))))}])
 
 (defn start-scheduler-with-jobs
   []
