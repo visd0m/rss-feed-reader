@@ -22,9 +22,10 @@
 (defn delete-old-feed-items
   []
   (let [date (Timestamp/from (.minus (Instant/now) 3 ChronoUnit/DAYS))
-        items-to-delete (feed-item/by-date-before date)
-        feeds-to-delete (->> (feed/all-enabled)
-                             (filter #(should-consider-feed? % items-to-delete))
-                             (map #(:id %)))]
-    (if-not (empty? feeds-to-delete)
-      (feed-item/delete-older-than date feeds-to-delete))))
+        items-to-delete (feed-item/by-date-before date)]
+    (if-not (empty? items-to-delete)
+      (let [feeds-to-delete (->> (feed/all-enabled)
+                                 (filter #(should-consider-feed? % items-to-delete))
+                                 (map #(:id %)))]
+        (if-not (empty? feeds-to-delete)
+          (feed-item/delete-older-than date feeds-to-delete))))))
