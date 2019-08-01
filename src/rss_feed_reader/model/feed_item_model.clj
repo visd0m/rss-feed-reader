@@ -47,6 +47,15 @@
    (-> (first (sql/query connection ["select * from feed_item where hash = ?" hash]))
        (to-kebab-case-keys))))
 
+(defn by-date-before
+  ([date]
+   (by-date-before date (db/db-connection)))
+  ([date connection]
+   (log/info "loading feed items before date=" date)
+   (let [result (sql/query connection ["select * from feed_item where insert_date < (?::timestamp) order by insert_date asc" date])]
+     (into []
+           (map #(assoc % :item (cheshire.core/parse-string (:value (bean (:item %))))) result)))))
+
 (defn by-date-after
   ([date]
    (by-date-after date (db/db-connection)))
@@ -102,9 +111,13 @@
 ; ==== delete
 
 (defn delete-older-than
-  ([date]
-   (delete-older-than date (db/db-connection)))
-  ([date conn]
+  ([date feed-ids]
+   (delete-older-than date feed-ids (db/db-connection)))
+  ([date feed-ids conn]
    (sql/with-db-transaction [conn (db/db-connection)]
-                            (sql/execute! conn ["delete from feed_item where insert_date < ?" date]))))
+                            (sql/execute! conn
+                                          [(str
+                                             (to-batch-load-query "delete from feed_item where feed_id in (?)" feed-ids)
+                                             " and insert_date < ?")
+                                           date]))))
 

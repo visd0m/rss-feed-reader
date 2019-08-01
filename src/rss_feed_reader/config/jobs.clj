@@ -5,7 +5,7 @@
             [clojurewerkz.quartzite.triggers :as t]
             [rss-feed-reader.jobs.rss-fetching-job :as rss-fetcher]
             [rss-feed-reader.jobs.telegram-polling-job :as telegram-polling]
-            [rss-feed-reader.jobs.old-feed-items-eraser :as old-feed-item-eraser]
+            [rss-feed-reader.jobs.feed-items-deleting-job :as feed-items-deleting-job]
             [rss-feed-reader.jobs.telegram-push-job :as telegram-push]
             [clojurewerkz.quartzite.schedule.cron :refer [schedule cron-schedule]]))
 
@@ -38,7 +38,17 @@
                        (t/with-identity (t/key "triggers.3"))
                        (t/start-now)
                        (t/with-schedule (schedule
-                                          (cron-schedule "*/4 * * * * ?"))))}])
+                                          (cron-schedule "*/4 * * * * ?"))))}
+           {:job     (j/build
+                       (j/of-type (defjob remove-old-feed-items
+                                    [_]
+                                    (feed-items-deleting-job/delete-old-feed-items)))
+                       (j/with-identity (j/key "jobs.job.4")))
+            :trigger (t/build
+                       (t/with-identity (t/key "triggers.4"))
+                       (t/start-now)
+                       (t/with-schedule (schedule
+                                          (cron-schedule "0 0 0 * * ?"))))}])
 
 (defn start-scheduler-with-jobs
   []
